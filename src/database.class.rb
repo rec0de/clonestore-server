@@ -1,0 +1,94 @@
+require 'sqlite3'
+require_relative 'plasmid.class'
+
+class Database
+	@@createStatements = [
+		"CREATE TABLE IF NOT EXISTS plasmids(id INTEGER PRIMARY KEY, name TEXT, initials TEXT, labNotes TEXT, description TEXT, backbonePlasmid TEXT, timeOfEntry INTEGER, timeOfCreation INTEGER, geneData BLOB, isArchived BOOLEAN);",
+		"CREATE TABLE IF NOT EXISTS selectionMarkers(plasmidID INTEGER, marker TEXT);",
+		"CREATE TABLE IF NOT EXISTS plasmidFeatures(plasmidID INTEGER, hasFeature TEXT);"
+	]
+
+	def initialize(file)
+		@db = SQLite3::Database.open(file)
+		@db.results_as_hash = true;
+
+		@@createStatements.each{ |stmt|
+			@db.execute(stmt);
+		}
+	end
+
+	def insert(plasmid)
+		if plasmid.is_a? Plasmid
+
+			# Insert main plasmid data
+			stm = @db.prepare("INSERT INTO plasmids(name, initials, labNotes, description, backbonePlasmid, timeOfEntry, timeOfCreation, geneData, isArchived) VALUES(?, ?, ?, ?, ?, ?, ?, ?, 0);")
+			stm.bind_param(1, plasmid.name)
+			stm.bind_param(2, plasmid.initials)
+			stm.bind_param(3, nil) #plasmid.labNotes)
+			stm.bind_param(4, plasmid.description)
+			stm.bind_param(5, nil) #plasmid.backbonePlasmid)
+			stm.bind_param(6, plasmid.timeOfEntry)
+			stm.bind_param(7, plasmid.timeOfCreation)
+			stm.bind_param(8, plasmid.geneData)
+			stm.execute
+			id = @db.last_insert_row_id
+
+			# Insert selection marker data
+			plasmid.selectionMarkers.each { |marker|
+				stm = @db.prepare("INSERT INTO selectionMarkers(plasmidID, marker) VALUES (?, ?);")
+				stm.bind_param(1, id)
+				stm.bind_param(2, marker)
+				stm.execute
+			}
+
+			# Insert feature data
+			plasmid.features.each { |feature|
+				stm = @db.prepare("INSERT INTO plasmidFeatures(plasmidID, hasFeature) VALUES (?, ?);")
+				stm.bind_param(1, id)
+				stm.bind_param(2, feature)
+				stm.execute
+			}
+
+			return "p#{plasmid.initials}#{id}"
+		else
+			raise CloneStoreDatabaseError, 'Can\'t insert something that is not a Plasmid object'
+		end
+	end
+
+	def getPlasmid(id)
+		stm = @db.prepare("SELECT * FROM plasmids WHERE id = ?;")
+		stm.bind_param(1, id)
+		rs = stm.execute.next # Get only the first returned value
+
+		return nil if rs == nil
+
+		plasmid = Plasmid.new(rs['name'], rs['initials'], rs['description'], rs['geneData'], rs['timeOfCreation'], rs['timeOfEntry'])
+
+		# Fetch features from database
+		getPlasmidFeatures(id).each{ |row|
+			plasmid.addFeature(row['hasFeature'])
+		}
+
+		# Fetch selectionMarkers from database
+		getSelectionMarkers(id).each{ |row|
+			plasmid.addSelectionMarker(row['marker'])
+		}
+
+		return plasmid
+	end
+
+	def getPlasmidFeatures(id)
+		stm = @db.prepare("SELECT hasFeature FROM plasmidFeatures WHERE plasmidID = ?;")
+		stm.bind_param(1, id)
+		stm.execute
+	end
+
+	def getSelectionMarkers(id)
+		stm = @db.prepare("SELECT marker FROM selectionMarkers WHERE plasmidID = ?;")
+		stm.bind_param(1, id)
+		stm.execute
+	end
+end
+
+class CloneStoreDatabaseError < CloneStoreRuntimeError
+end

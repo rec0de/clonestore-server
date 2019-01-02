@@ -4,8 +4,10 @@ require_relative 'plasmid.class'
 class Database
 	@@createStatements = [
 		"CREATE TABLE IF NOT EXISTS plasmids(id INTEGER PRIMARY KEY, name TEXT, initials TEXT, labNotes TEXT, description TEXT, backbonePlasmid TEXT, timeOfEntry INTEGER, timeOfCreation INTEGER, geneData BLOB, isArchived BOOLEAN);",
-		"CREATE TABLE IF NOT EXISTS selectionMarkers(plasmidID INTEGER, marker TEXT);",
-		"CREATE TABLE IF NOT EXISTS plasmidFeatures(plasmidID INTEGER, hasFeature TEXT);"
+		"CREATE TABLE IF NOT EXISTS selectionMarkers(plasmidID INTEGER, marker TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, marker));",
+		"CREATE TABLE IF NOT EXISTS plasmidFeatures(plasmidID INTEGER, hasFeature TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, hasFeature));",
+		"CREATE TABLE IF NOT EXISTS storageLocations(location TEXT, plasmidID TEXT, CONSTRAINT locUnique UNIQUE (location));",
+		"CREATE TABLE IF NOT EXISTS printers(url TEXT, name TEXT, location TEXT, secret TEXT);"
 	]
 
 	def initialize(file)
@@ -19,6 +21,8 @@ class Database
 
 	def insert(plasmid)
 		if plasmid.is_a? Plasmid
+			# Perform sanity check
+			plasmid.sanitycheck
 
 			# Insert main plasmid data
 			stm = @db.prepare("INSERT INTO plasmids(name, initials, labNotes, description, backbonePlasmid, timeOfEntry, timeOfCreation, geneData, isArchived) VALUES(?, ?, ?, ?, ?, ?, ?, ?, 0);")
@@ -64,6 +68,9 @@ class Database
 
 		plasmid = Plasmid.new(rs['name'], rs['initials'], rs['description'], rs['geneData'], rs['timeOfCreation'], rs['timeOfEntry'])
 
+		# Set plasmid id
+		plasmid.setIdNum(rs['id'])
+
 		# Fetch features from database
 		getPlasmidFeatures(id).each{ |row|
 			plasmid.addFeature(row['hasFeature'])
@@ -86,6 +93,18 @@ class Database
 	def getSelectionMarkers(id)
 		stm = @db.prepare("SELECT marker FROM selectionMarkers WHERE plasmidID = ?;")
 		stm.bind_param(1, id)
+		stm.execute
+	end
+
+	def setArchiveFlag(id, flag = 1)
+		if flag == 1
+			stm = @db.prepare("DELETE FROM storageLocations WHERE plasmidID = ?;")
+			stm.bind_param(1, id)
+			stm.execute
+		end
+		stm = @db.prepare("UPDATE plasmids SET isArchived = ? WHERE id = ?;")
+		stm.bind_param(1, flag)
+		stm.bind_param(2, id)
 		stm.execute
 	end
 end

@@ -28,6 +28,11 @@ class Plasmid attr_reader :id, :name, :initials, :description, :timeOfEntry, :ti
 	end
 
 	def sanityCheck
+		# Assert that all required values are present
+		if @name == nil || @initials == nil
+			raise CloneStorePlasmidSanityError, 'Name and Initials of plasmid have to be set'
+		end
+		
 		# Assert that time of creation is a somewhat sane unix timestamp and does not lie too far in the future
 		if !@timeOfCreation.is_a? Integer || @timeOfCreation > Time.now.to_i + 24 * 60 * 60 || @timeOfCreation < 0
 			raise CloneStorePlasmidSanityError, 'Time of creation value is not a valid timestamp'

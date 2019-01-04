@@ -81,10 +81,10 @@ end
 # Printer setup
 put '/print' do
 	begin
-		if params['url'] == nil || params['secret'] == nil || params['secret'] == '' || params['url'] == ''
+		if params['url'] == nil || params['authKey'] == nil || params['authKey'] == '' || params['url'] == ''
 			raise CloneStoreRuntimeError, "Printer URL or secret missing"
 		end
-		db.setupPrinter(params['url'], params['name'], params['location'], params['secret'])
+		db.setupPrinter(params['url'], params['name'], params['location'], params['authKey'])
 		# Re-Initialize remote
 		printRemote = db.getPrintRemote
 		success('Printer setup successfully')

@@ -1,5 +1,6 @@
 require 'sqlite3'
 require_relative 'plasmid.class'
+require_relative 'printremote.class'
 
 class Database
 	@@createStatements = [
@@ -107,6 +108,31 @@ class Database
 		stm.bind_param(2, id)
 		stm.execute
 	end
+
+	# Printing
+
+	def setupPrinter(url, name, location, secret)
+		clr = @db.prepare("DELETE FROM printers;")
+		clr.execute
+		stm = @db.prepare("INSERT INTO printers(url, name, location, secret) VALUES (?, ?, ?, ?);")
+		stm.bind_param(1, url)
+		stm.bind_param(2, name)
+		stm.bind_param(3, location)
+		stm.bind_param(4, secret)
+		stm.execute
+	end
+
+	def getPrintRemote
+		stm = @db.prepare("SELECT url, secret FROM printers LIMIT 1;")
+		data = stm.execute.next
+
+		if data == nil
+			raise CloneStoreDatabaseError, "No printer configured"
+		end
+
+		PrintRemote.new(data['url'], data['secret'])
+	end
+
 end
 
 class CloneStoreDatabaseError < CloneStoreRuntimeError

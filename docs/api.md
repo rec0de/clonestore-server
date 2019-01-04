@@ -60,6 +60,11 @@ Mark a plasmid as archived without actually deleting any information. This frees
 | ---------- | ------ | -------------------------------------------------- |
 | id         | text   | Unique ID of the requested plasmid, format `pXY0123` |
 
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `success`                          |
+| details    | text   | Human-readable status information                  |
+
 ### Modifying plasmid data
 
 ### Setting a plasmid storage location
@@ -68,4 +73,44 @@ Mark a plasmid as archived without actually deleting any information. This frees
 
 ### Configuring the printer
 
+`PUT /print`
+
+Updates or creates the printer used to print labels. In the process, any printer that is already connected will be removed. While only the printer URL and the shared secret are required, a name and location can be set as well.
+
+| Parameter  | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| url        | text   | URL the printer API can be reached at              |
+| authKey    | text   | Shared secret used to authenticate to the printer  |
+| name       | text   | Human-readable name of the printer, optional       |
+| location   | text   | Human-readable location of the printer, optional   |
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `success`                          |
+| details    | text   | Human-readable status information                  |
+
+### Querying printer status
+
+`GET /print`
+
+Checks if the currently connected printer (not the device hosting the print server) is turned on and ready to print.
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `printerStatus`                    |
+| online     | bool   | `true` if the printer is online and ready, `false` otherwise  |
+
 ### Printing stickers
+
+`POST /print/[id]`
+
+Sends a print request for the selected plasmid to the printer. This request may take a long time to complete.
+
+| Parameter  | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| id         | text   | Unique ID of the requested plasmid, format `pXY0123` |
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `success`                          |
+| details    | text   | Human-readable status information                  |

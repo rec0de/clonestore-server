@@ -32,7 +32,7 @@ get '/plasmid/:id' do
 		plasmid = db.getPlasmid(idNum)
 		if plasmid == nil
 			status 404
-			"No plasmid with given ID"
+			errmsg("No plasmid with given ID")
 		else
 			plasmid.to_json
 		end
@@ -60,6 +60,7 @@ delete '/plasmid/:id' do
 	begin
 		idNum = params[:id].sub(/^p[^0-9]+/, '').to_i
 		db.setArchiveFlag(idNum)
+		success("Plasmid archived successfully")
 	rescue CloneStoreRuntimeError => e
 		status 500
 		errmsg(e.message)

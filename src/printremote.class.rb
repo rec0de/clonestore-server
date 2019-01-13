@@ -12,10 +12,14 @@ class PrintRemote
 	end
 
 	def status
-		req = Net::HTTP::Get.new(@uri)
-		res = Net::HTTP.start(@uri.host, @uri.port, use_ssl: (@uri.scheme == 'https')) {|http|
-		  http.request(req)
-		}
+		begin
+			req = Net::HTTP::Get.new(@uri)
+			res = Net::HTTP.start(@uri.host, @uri.port, use_ssl: (@uri.scheme == 'https')) {|http|
+		  		http.request(req)
+			}
+		rescue Errno::EHOSTUNREACH
+			raise CloneStorePrintRemoteError, "Print Server is unreachable"
+		end
 
 		begin
 			response = JSON.parse(res.body)
@@ -44,6 +48,8 @@ class PrintRemote
 			end
 
 			response = JSON.parse(res.body)
+		rescue Errno::EHOSTUNREACH
+			raise CloneStorePrintRemoteError, "Print Server is unreachable"
 		rescue JSON::ParserError
 			raise CloneStorePrintRemoteError, "Network request got malformed response"
 		end

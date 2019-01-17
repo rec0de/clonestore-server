@@ -45,7 +45,12 @@ class Plasmid attr_reader :id, :name, :initials, :description, :timeOfEntry, :ti
 	end
 
 	def self.fromJSON(json)
-		parsed = JSON.parse(json)
+		begin
+			parsed = JSON.parse(json)
+		rescue JSON::ParserError
+			raise CloneStorePlasmidSanityError, "Plasmid JSON data is corrupt"
+		end
+		
 		res = Plasmid.new(parsed['name'], parsed['initials'], parsed['description'], parsed['geneData'], parsed['timeOfCreation'], parsed['timeOfEntry'])
 
 		parsed['features'].each{ |feature|

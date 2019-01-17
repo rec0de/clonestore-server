@@ -10,6 +10,11 @@ version = '0.1.0'
 db = Database.new('test.sqlite')
 printRemote = nil
 
+# Default headers and settings
+def defaults
+	headers( "Access-Control-Allow-Origin" => "*" )
+end
+
 # Error message JSON helper
 def errmsg(msg)
 	"{\"type\":\"error\", \"details\":\"#{msg}\"}"
@@ -20,13 +25,26 @@ def success(msg)
 	"{\"type\":\"success\", \"details\":\"#{msg}\"}"
 end
 
+# Plasmid ID message
+def plasmidIdMsg(id)
+	"{\"type\":\"plasmidID\", \"id\":\"#{id}\"}"
+end
+
+# Handle CORS preflight requests
+options '*' do
+	defaults()
+	headers( "Access-Control-Allow-Methods" => "HEAD, GET, PUT, DELETE, OPTIONS" )
+end
+
 # Get server info
 get '/' do
+	defaults()
 	"{\"type\": \"clonestore-server\", \"version\": \"#{version}\"}"
 end
 
 # Get plasmid
 get '/plasmid/:id' do
+	defaults()
 	idNum = params[:id].sub(/^p[^0-9]+/, '').to_i
 	begin
 		plasmid = db.getPlasmid(idNum)
@@ -44,11 +62,12 @@ end
 
 # Add plasmid
 post '/plasmid' do
+	defaults()
 	begin
 		plasmid = Plasmid::fromJSON(params['data'])
 		id = db.insert(plasmid)
 		status 200
-		"{\"success\": true, \"id\": \"#{id}\"}"
+		plasmidIdMsg(id)
 	rescue CloneStoreRuntimeError => e
 		status 400
 		errmsg(e.message)
@@ -57,6 +76,7 @@ end
 
 # Archive plasmid
 delete '/plasmid/:id' do
+	defaults()
 	begin
 		idNum = params[:id].sub(/^p[^0-9]+/, '').to_i
 		db.setArchiveFlag(idNum)
@@ -69,6 +89,7 @@ end
 
 # Printer status
 get '/print' do
+	defaults()
 	begin
 		# Initialize remote if necessary
 		printRemote = db.getPrintRemote if printRemote == nil
@@ -81,6 +102,7 @@ end
 
 # Printer setup
 put '/print' do
+	defaults()
 	begin
 		if params['url'] == nil || params['authKey'] == nil || params['authKey'] == '' || params['url'] == ''
 			raise CloneStoreRuntimeError, "Printer URL or secret missing"
@@ -97,6 +119,7 @@ end
 
 # Print label
 post '/print/:id' do
+	defaults()
 	begin
 		idNum = params[:id].sub(/^p[^0-9]+/, '').to_i
 		plasmid = db.getPlasmid(idNum)
@@ -109,6 +132,59 @@ post '/print/:id' do
 			plasmid.to_json
 			printRemote.print(plasmid)
 			success("Printing completed")
+		end
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end
+
+# Set storage slot
+put '/storage/:loc' do
+	defaults()
+	begin
+		raise CloneStoreRuntimeError, "Storage slot is already occupied" unless db.getStorageSlot(params[:loc]) === nil
+		raise CloneStoreRuntimeError, "No entry set" if params['entry'] == '' or params['entry'] == nil
+		raise CloneStoreRuntimeError, "Could not set storage slot" unless db.setStorageSlot(params[:loc], params['entry'])
+		success("Storage location set successfully")
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end
+
+# Free storage slot
+delete '/storage/:loc' do
+	defaults()
+	begin
+		if db.freeStorageSlot(params[:loc])
+			success("Storage slot cleared")
+		else
+			raise CloneStoreRuntimeError, "Could not clear storage slot"
+		end
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end
+
+# Get plasmid storage location
+get '/storage/id/:id' do
+	defaults()
+	errmsg("Not yet implemented")
+end
+
+# Get plasmid in given location
+get '/storage/loc/:loc' do
+	defaults()
+	begin
+		res = db.getStorageSlot(params[:loc])
+		
+		if res === nil
+			status 404
+			errmsg("Storage location is empty #{params[:loc]}")
+		else
+			plasmidIdMsg(res)
 		end
 	rescue CloneStoreRuntimeError => e
 		status 500

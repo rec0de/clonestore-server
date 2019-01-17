@@ -133,6 +133,31 @@ class Database
 		PrintRemote.new(data['url'], data['secret'])
 	end
 
+	# Storage management
+
+	def setStorageSlot(location, id)
+		stm = @db.prepare("INSERT INTO storageLocations(location, plasmidID) VALUES (?, ?);")
+		stm.bind_param(1, location)
+		stm.bind_param(2, id)
+		stm.execute
+	end
+
+	def freeStorageSlot(location)
+		stm = @db.prepare("DELETE FROM storageLocations WHERE location = ?;")
+		stm.bind_param(1, location)
+		stm.execute
+	end
+
+	def getStorageSlot(location)
+		stm = @db.prepare("SELECT plasmidID FROM storageLocations WHERE location = ?;")
+		stm.bind_param(1, location)
+		rs = stm.execute.next
+
+		puts rs.inspect
+
+		return rs == nil ? nil : rs['plasmidID']
+	end
+
 end
 
 class CloneStoreDatabaseError < CloneStoreRuntimeError

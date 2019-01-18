@@ -54,7 +54,7 @@ get '/plasmid/:id' do
 		plasmid = db.getPlasmid(params[:id])
 		if plasmid == nil
 			status 404
-			errmsg("No plasmid with given ID")
+			errmsg("Plasmid does not exist")
 		else
 			plasmid.to_json
 		end
@@ -82,6 +82,7 @@ end
 delete '/plasmid/:id' do
 	defaults()
 	begin
+		raise CloneStoreRuntimeError, "Plasmid does not exist" if db.getPlasmid(params[:id]) === nil
 		db.setArchiveFlag(params[:id])
 		success("Plasmid archived successfully")
 	rescue CloneStoreRuntimeError => e
@@ -173,7 +174,7 @@ delete '/storage/:loc' do
 	end
 end
 
-# Get plasmid storage location
+# Get plasmid storage locations
 get '/storage/id/:id' do
 	defaults()
 	errmsg("Not yet implemented")

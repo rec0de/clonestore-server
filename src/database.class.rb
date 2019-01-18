@@ -177,7 +177,14 @@ class Database
 		stm = @db.prepare("SELECT value FROM idCounter WHERE key = 'global'")
 		rs = stm.execute.next
 
-		return rs == nil ? 1 : rs['value']
+		# Insert first value if counter is not initialized
+		if rs == nil
+			stm = @db.prepare("INSERT INTO idCounter(key, value) VALUES ('global', 1);")
+			stm.execute
+			return 1
+		else
+			return rs['value']
+		end
 	end
 
 	def incrementIdCounter

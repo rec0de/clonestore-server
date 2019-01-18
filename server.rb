@@ -30,6 +30,11 @@ def plasmidIdMsg(id)
 	"{\"type\":\"plasmidID\", \"id\":\"#{id}\"}"
 end
 
+# Storage location message (plasmidID and bacterial host)
+def storageContentMsg(id, host)
+	"{\"type\":\"storageLocationContent\", \"id\":\"#{id}\", \"host\": \"#{host}\"}"
+end
+
 # Handle CORS preflight requests
 options '*' do
 	defaults()
@@ -45,9 +50,8 @@ end
 # Get plasmid
 get '/plasmid/:id' do
 	defaults()
-	idNum = params[:id].sub(/^p[^0-9]+/, '').to_i
 	begin
-		plasmid = db.getPlasmid(idNum)
+		plasmid = db.getPlasmid(params[:id])
 		if plasmid == nil
 			status 404
 			errmsg("No plasmid with given ID")
@@ -78,8 +82,7 @@ end
 delete '/plasmid/:id' do
 	defaults()
 	begin
-		idNum = params[:id].sub(/^p[^0-9]+/, '').to_i
-		db.setArchiveFlag(idNum)
+		db.setArchiveFlag(params[:id])
 		success("Plasmid archived successfully")
 	rescue CloneStoreRuntimeError => e
 		status 500
@@ -121,8 +124,7 @@ end
 post '/print/:id' do
 	defaults()
 	begin
-		idNum = params[:id].sub(/^p[^0-9]+/, '').to_i
-		plasmid = db.getPlasmid(idNum)
+		plasmid = db.getPlasmid(params[:id])
 		if plasmid == nil
 			status 404
 			errmsg("No plasmid with given ID")
@@ -145,7 +147,10 @@ put '/storage/:loc' do
 	begin
 		raise CloneStoreRuntimeError, "Storage slot is already occupied" unless db.getStorageSlot(params[:loc]) === nil
 		raise CloneStoreRuntimeError, "No entry set" if params['entry'] == '' or params['entry'] == nil
-		raise CloneStoreRuntimeError, "Could not set storage slot" unless db.setStorageSlot(params[:loc], params['entry'])
+		raise CloneStoreRuntimeError, "No host bacterium set" if params['host'] == '' or params['host'] == nil
+		raise CloneStoreRuntimeError, "Plasmid does not exist" if db.getPlasmid(params['entry']) === nil
+
+		raise CloneStoreRuntimeError, "Could not set storage slot" unless db.setStorageSlot(params[:loc], params['entry'], params['host'])
 		success("Storage location set successfully")
 	rescue CloneStoreRuntimeError => e
 		status 500
@@ -182,9 +187,9 @@ get '/storage/loc/:loc' do
 		
 		if res === nil
 			status 404
-			errmsg("Storage location is empty #{params[:loc]}")
+			errmsg("Storage location is empty")
 		else
-			plasmidIdMsg(res)
+			storageContentMsg(res['id'], res['host'])
 		end
 	rescue CloneStoreRuntimeError => e
 		status 500

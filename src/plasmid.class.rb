@@ -1,18 +1,19 @@
 require 'set'
 require 'json'
 
-class Plasmid attr_reader :id, :name, :initials, :description, :timeOfEntry, :timeOfCreation, :geneData, :features, :selectionMarkers
+class Plasmid attr_reader :id, :createdBy, :initials, :description, :backbonePlasmid, :timeOfEntry, :timeOfCreation, :geneData, :features, :selectionMarkers
 
-	def initialize(name, initials, desc, geneData, timeCreated, timeOfEntry = Time.now.to_i)
+	def initialize(createdBy, initials, desc, backbone, geneData, timeCreated, timeOfEntry = nil, id = nil)
 		@features = Set.new
 		@selectionMarkers = Set.new
-		@name = name
+		@createdBy = createdBy
 		@initials = initials
 		@description = desc
+		@backbonePlasmid = backbone
 		@timeOfCreation = timeCreated
-		@timeOfEntry = timeOfEntry
+		@timeOfEntry = (timeOfEntry == nil) ? Time.now.to_i : timeOfEntry
 		@geneData = geneData
-		@id = nil;
+		@id = id;
 	end
 
 	def addFeature(feature)
@@ -29,8 +30,8 @@ class Plasmid attr_reader :id, :name, :initials, :description, :timeOfEntry, :ti
 
 	def sanityCheck
 		# Assert that all required values are present
-		if @name == nil || @initials == nil
-			raise CloneStorePlasmidSanityError, 'Name and Initials of plasmid have to be set'
+		if @createdBy == nil || @initials == nil
+			raise CloneStorePlasmidSanityError, 'Creator Name and Initials of plasmid have to be set'
 		end
 		
 		# Assert that time of creation is a somewhat sane unix timestamp and does not lie too far in the future
@@ -51,7 +52,7 @@ class Plasmid attr_reader :id, :name, :initials, :description, :timeOfEntry, :ti
 			raise CloneStorePlasmidSanityError, "Plasmid JSON data is corrupt"
 		end
 		
-		res = Plasmid.new(parsed['name'], parsed['initials'], parsed['description'], parsed['geneData'], parsed['timeOfCreation'], parsed['timeOfEntry'])
+		res = Plasmid.new(parsed['createdBy'], parsed['initials'], parsed['description'], parsed['backbonePlasmid'], parsed['geneData'], parsed['timeOfCreation'], parsed['timeOfEntry'], parsed['id'])
 
 		parsed['features'].each{ |feature|
 			res.addFeature(feature)
@@ -66,13 +67,14 @@ class Plasmid attr_reader :id, :name, :initials, :description, :timeOfEntry, :ti
 	def to_json
 		obj = {
 			'id' => @id,
-			'name' => @name,
-			'initials' => @initials,
 			'description' => @description,
-			'timeOfCreation' => @timeOfCreation,
-			'timeOfEntry' => @timeOfEntry,
+			'backbonePlasmid' => @backbonePlasmid,
 			'features' => @features.to_a,
 			'selectionMarkers' => @selectionMarkers.to_a,
+			'timeOfCreation' => @timeOfCreation,
+			'timeOfEntry' => @timeOfEntry,
+			'createdBy' => @name,
+			'initials' => @initials,
 			'geneData' => @geneData
 		}
 

@@ -84,7 +84,7 @@ class Database
 
 		return nil if rs == nil
 
-		plasmid = Plasmid.new(rs['createdBy'], rs['initials'], rs['description'], rs['backbonePlasmid'], rs['geneData'], rs['timeOfCreation'], rs['timeOfEntry'], rs['id'])
+		plasmid = Plasmid::fromHash(rs)
 
 		# Fetch features from database
 		getPlasmidFeatures(id).each{ |row|

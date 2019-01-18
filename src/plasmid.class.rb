@@ -45,6 +45,10 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :backbonePla
 		end
 	end
 
+	def self.fromHash(h)
+		Plasmid.new(h['createdBy'], h['initials'], h['description'], h['backbonePlasmid'], h['geneData'], h['timeOfCreation'], h['timeOfEntry'], h['id'])
+	end
+
 	def self.fromJSON(json)
 		begin
 			parsed = JSON.parse(json)
@@ -52,7 +56,7 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :backbonePla
 			raise CloneStorePlasmidSanityError, "Plasmid JSON data is corrupt"
 		end
 		
-		res = Plasmid.new(parsed['createdBy'], parsed['initials'], parsed['description'], parsed['backbonePlasmid'], parsed['geneData'], parsed['timeOfCreation'], parsed['timeOfEntry'], parsed['id'])
+		res = Plasmid::fromHash(parsed)
 
 		parsed['features'].each{ |feature|
 			res.addFeature(feature)

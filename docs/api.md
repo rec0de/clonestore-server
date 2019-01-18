@@ -12,7 +12,7 @@ At this time, not authentication mechanisms are in place.
 
 ## Methods
 
-The API consists of two endpoints, `plasmid` and `print`, as well as the root endpoint.
+The API consists of three endpoints, `plasmid`, `storage` and `print`, as well as the root endpoint.
 
 ### Server info
 
@@ -39,7 +39,7 @@ Returns a JSON representation of the requested plasmid if found, or a 404 error 
 
 `POST /plasmid`
 
-Adds a new plasmid to the database and creates an ID for it. The provided plasmid data should contain values for all fields marked as required in the data format documentation.
+Adds a new plasmid to the database. If the plasmid supplied does not have an ID, a new one will be generated using sequential numbering. The provided plasmid data should contain values for all fields marked as required in the data format documentation.
 
 | Parameter  | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |
@@ -47,8 +47,8 @@ Adds a new plasmid to the database and creates an ID for it. The provided plasmi
 
 | Property   | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |
-| success    | bool   | Success status of the insert operation             |
-| id         | text   | Unique ID of the inserted plasmid, format `pXY0123`  |
+| type       | text   | Constant string `plasmidID`                        |
+| id         | text   | Unique ID of the inserted plasmid, format `pXY123`  |
 
 ### Archiving a plasmid
 
@@ -58,7 +58,7 @@ Mark a plasmid as archived without actually deleting any information. This frees
 
 | Parameter  | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |
-| id         | text   | Unique ID of the requested plasmid, format `pXY0123` |
+| id         | text   | Unique ID of the requested plasmid, format `pXY123` |
 
 | Property   | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |
@@ -68,6 +68,52 @@ Mark a plasmid as archived without actually deleting any information. This frees
 ### Modifying plasmid data
 
 ### Setting a plasmid storage location
+
+`PUT /storage/[location]`
+
+Marks the given storage slot as occupied by the given plasmid. The location has to be free for the request to succeed. Storage locations can be arbitrary strings, so care should be taken (on the client side) that location formatting is uniform. Otherwise two locations referring to the same physical location may store different plasmids, creating inconsistencies.
+
+| Parameter  | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| location   | text   | Canonical name of the storage slot, must be unique |
+| entry      | text   | Unique ID of the plasmid to be stored              |
+| host       | text   | Bacterial host of the sample to be stored          |
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `success`                          |
+| details    | text   | Human-readable status information                  |
+
+### Querying a storage location
+
+`GET /storage/loc/[location]`
+
+Retrieves the ID of the plasmid stored in the given location. Returns a 404 Error if the storage slot is empty.
+
+| Parameter  | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| location   | text   | Canonical name of the storage slot                 |
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `storageLocationContent`           |
+| id         | text   | Unique ID of the stored plasmid, format `pXY123`   |
+| host       | text   | Bacterial host of the stored plasmid               |
+
+### Freeing a plasmid storage location
+
+`DELETE /storage/[location]`
+
+Marks the given storage slot as empty and available for new plasmids.
+
+| Parameter  | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| location   | text   | Canonical name of the storage slot                 |
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `success`                          |
+| details    | text   | Human-readable status information                  |
 
 ### Searching plasmids
 
@@ -108,7 +154,7 @@ Sends a print request for the selected plasmid to the printer. This request may 
 
 | Parameter  | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |
-| id         | text   | Unique ID of the requested plasmid, format `pXY0123` |
+| id         | text   | Unique ID of the requested plasmid, format `pXY123` |
 
 | Property   | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |

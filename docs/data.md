@@ -11,10 +11,11 @@ Plasmids are represented as JSON Objects of the following structure:
 
 | Property    | Required? | Description                                | Example value |
 | ----------- | --------- | ------------------------------------------ | ------------- |
-| id          | no        | Unique identifier of the plasmid.          | `pKV42`       |
-| name        | yes       | Name of the plasmid, arbitrary string      | `TestPlasmid` |
-| initials    | yes       | Initials of the plasmid's creator          | `KV`          |
+| id          | no        | Unique identifier of the plasmid           | `pJD42`       |
+| createdBy   | yes       | Name of the plasmid's creator              | `John Doe`    |
+| initials    | yes       | Initials of the plasmid's creator          | `JD`          |
 | description | no        | Free-text description of the plasmid       | --            |
+| backbonePlasmid | no    | Backbone Plasmid                           | ?             |
 | timeOfCreation | yes    | UNIX timestamp of the plasmids creation time| `1546441000` |
 | timeOfEntry | no        | UNIX timestamp when the plasmid was added  | `1546442964`  |
 | features    | no        | List of plasmid features (strings)         | `["Magnicon","Terminator"]` |

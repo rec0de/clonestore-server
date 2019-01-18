@@ -77,7 +77,7 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :backbonePla
 			'selectionMarkers' => @selectionMarkers.to_a,
 			'timeOfCreation' => @timeOfCreation,
 			'timeOfEntry' => @timeOfEntry,
-			'createdBy' => @name,
+			'createdBy' => @createdBy,
 			'initials' => @initials,
 			'geneData' => @geneData
 		}

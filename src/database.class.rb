@@ -84,11 +84,7 @@ class Database
 
 		return nil if rs == nil
 
-		puts rs.inspect
-
 		plasmid = Plasmid.new(rs['createdBy'], rs['initials'], rs['description'], rs['backbonePlasmid'], rs['geneData'], rs['timeOfCreation'], rs['timeOfEntry'], rs['id'])
-
-		puts plasmid.to_json
 
 		# Fetch features from database
 		getPlasmidFeatures(id).each{ |row|

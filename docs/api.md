@@ -100,6 +100,29 @@ Retrieves the ID of the plasmid stored in the given location. Returns a 404 Erro
 | id         | text   | Unique ID of the stored plasmid, format `pXY123`   |
 | host       | text   | Bacterial host of the stored plasmid               |
 
+### Searching plasmid locations
+
+`GET /storage/id/[id]`
+
+Returns all locations the given plasmid is currently stored at, including the respective bacterial hosts. Returns an empty list if the plasmid is not stored anywhere.
+
+| Parameter  | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| id         | text   | Unique ID of the plasmid                           |
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `storageLocationList`              |
+| locations  | array  | Array of storage location objects                  |
+
+The objects in the `locations` list have the following properties:
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| location   | text   | Canonical name of the storage slot of this sample  |
+| host       | text   | Name of the bacterial host                         |
+
+
 ### Freeing a plasmid storage location
 
 `DELETE /storage/[location]`
@@ -114,8 +137,6 @@ Marks the given storage slot as empty and available for new plasmids.
 | ---------- | ------ | -------------------------------------------------- |
 | type       | text   | Constant string `success`                          |
 | details    | text   | Human-readable status information                  |
-
-### Searching plasmids
 
 ### Configuring the printer
 

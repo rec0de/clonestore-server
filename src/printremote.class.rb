@@ -35,7 +35,8 @@ class PrintRemote
 	def print(plasmid)
 		# Gather necessary data and calculate MAC
 		link = "http://cs.rec0de.net/#{plasmid.id}"
-		text = "#{plasmid.name}\n#{Time.at(plasmid.timeOfCreation)} | #{plasmid.initials}"
+		dateString = Time.at(plasmid.timeOfCreation).to_date.strftime('%Y/%m/%d')
+		text = "#{plasmid.id}\n#{dateString} | #{plasmid.initials}"
 		current = (Time.now().to_i / 30).floor
 		mac = OpenSSL::HMAC.hexdigest(@digest, @secret, "#{link}|#{text}#{current}")
 

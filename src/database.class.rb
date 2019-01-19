@@ -171,6 +171,12 @@ class Database
 		return rs;
 	end
 
+	def getStorageLocations(plasmidID)
+		stm = @db.prepare("SELECT location, host FROM storageLocations WHERE plasmidID = ?;")
+		stm.bind_param(1, plasmidID)
+		stm.execute
+	end
+
 	# ID generation
 
 	def getNewId

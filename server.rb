@@ -10,6 +10,9 @@ version = '0.1.0'
 db = Database.new('test.sqlite')
 printRemote = nil
 
+# Listen globally
+set :bind, '0.0.0.0'
+
 # Default headers and settings
 def defaults
 	headers( "Access-Control-Allow-Origin" => "*" )
@@ -56,7 +59,7 @@ get '/plasmid/:id' do
 			status 404
 			errmsg("Plasmid does not exist")
 		else
-			plasmid.to_json
+			"{\"type\": \"plasmid\", \"plasmid\": #{plasmid.to_json}}"
 		end
 	rescue CloneStoreRuntimeError => e
 		status 500
@@ -177,6 +180,16 @@ end
 # Get plasmid storage locations
 get '/storage/id/:id' do
 	defaults()
+	begin
+		res = []
+		db.getStorageLocations(params[:id]).each{ |row|
+			res.push({'location' => row['location'], 'host' => row['host']})
+		}
+		return {'type' => 'storageLocationList', 'locations' => res}.to_json
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
 	errmsg("Not yet implemented")
 end
 

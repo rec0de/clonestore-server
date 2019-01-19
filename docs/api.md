@@ -35,6 +35,11 @@ Returns a JSON representation of the requested plasmid if found, or a 404 error 
 | ---------- | ------ | -------------------------------------------------- |
 | id         | text   | Unique ID of the requested plasmid, format `pXY0123` |
 
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `plasmid`                          |
+| plasmid    | json   | The requested plasmid JSON representation          |
+
 ### Creating a plasmid
 
 `POST /plasmid`

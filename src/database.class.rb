@@ -39,7 +39,7 @@ class Database
 			stm.bind_param(1, plasmid.id)
 			stm.bind_param(2, plasmid.createdBy)
 			stm.bind_param(3, plasmid.initials)
-			stm.bind_param(4, nil) #plasmid.labNotes)
+			stm.bind_param(4, plasmid.labNotes)
 			stm.bind_param(5, plasmid.description)
 			stm.bind_param(6, plasmid.backbonePlasmid)
 			stm.bind_param(7, plasmid.timeOfEntry)

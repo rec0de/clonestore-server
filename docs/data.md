@@ -15,6 +15,7 @@ Plasmids are represented as JSON Objects of the following structure:
 | createdBy   | yes       | Name of the plasmid's creator              | `John Doe`    |
 | initials    | yes       | Initials of the plasmid's creator          | `JD`          |
 | description | no        | Free-text description of the plasmid       | --            |
+| labNotes    | no        | Reference to relevant lab notes, free-text | `Book 3, p.9` |
 | backbonePlasmid | no    | Backbone Plasmid                           | ?             |
 | timeOfCreation | yes    | UNIX timestamp of the plasmids creation time| `1546441000` |
 | timeOfEntry | no        | UNIX timestamp when the plasmid was added  | `1546442964`  |

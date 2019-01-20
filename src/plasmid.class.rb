@@ -1,14 +1,15 @@
 require 'set'
 require 'json'
 
-class Plasmid attr_reader :id, :createdBy, :initials, :description, :backbonePlasmid, :timeOfEntry, :timeOfCreation, :geneData, :features, :selectionMarkers
+class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :backbonePlasmid, :timeOfEntry, :timeOfCreation, :geneData, :features, :selectionMarkers
 
-	def initialize(createdBy, initials, desc, backbone, geneData, timeCreated, timeOfEntry = nil, id = nil)
+	def initialize(createdBy, initials, desc, labnotes, backbone, geneData, timeCreated, timeOfEntry = nil, id = nil)
 		@features = Set.new
 		@selectionMarkers = Set.new
 		@createdBy = createdBy
 		@initials = initials
 		@description = desc
+		@labNotes = labnotes
 		@backbonePlasmid = backbone
 		@timeOfCreation = timeCreated
 		@timeOfEntry = (timeOfEntry == nil) ? Time.now.to_i : timeOfEntry
@@ -46,7 +47,7 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :backbonePla
 	end
 
 	def self.fromHash(h)
-		Plasmid.new(h['createdBy'], h['initials'], h['description'], h['backbonePlasmid'], h['geneData'], h['timeOfCreation'], h['timeOfEntry'], h['id'])
+		Plasmid.new(h['createdBy'], h['initials'], h['description'], h['labNotes'], h['backbonePlasmid'], h['geneData'], h['timeOfCreation'], h['timeOfEntry'], h['id'])
 	end
 
 	def self.fromJSON(json)
@@ -72,6 +73,7 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :backbonePla
 		obj = {
 			'id' => @id,
 			'description' => @description,
+			'labNotes' => @labNotes,
 			'backbonePlasmid' => @backbonePlasmid,
 			'features' => @features.to_a,
 			'selectionMarkers' => @selectionMarkers.to_a,

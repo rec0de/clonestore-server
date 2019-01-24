@@ -177,10 +177,13 @@ Checks if the currently connected printer (not the device hosting the print serv
 `POST /print/[id]`
 
 Sends a print request for the selected plasmid to the printer. This request may take a long time to complete.
+If the optional `host` parameter is present, the host value will be printed on the label together with the plasmid selection markers. Otherwise, only `id`, `timeOfCreation` and `initials` will be printed.
 
 | Parameter  | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |
 | id         | text   | Unique ID of the requested plasmid, format `pXY123` |
+| host       | text   | Bacterial Host to be printed on label, optional    |
+| copies     | int    | Number of labels to print, optional (default 1)    |
 
 | Property   | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |

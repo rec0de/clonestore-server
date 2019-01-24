@@ -40,7 +40,7 @@ class PrintRemote
 		text = "#{plasmid.id}\n#{dateString} | #{plasmid.initials}"
 
 		if(host != nil)
-			text += "\n #{host}\n#{plasmid.selectionMarkers.join(', ')}"
+			text += "\n #{host}\n#{plasmid.selectionMarkers.to_a.join(', ')}"
 		end
 		
 		current = (Time.now().to_i / 30).floor

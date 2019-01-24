@@ -135,8 +135,7 @@ post '/print/:id' do
 		else
 			# Initialize remote if necessary
 			printRemote = db.getPrintRemote if printRemote == nil
-			plasmid.to_json
-			printRemote.print(plasmid)
+			printRemote.print(plasmid, 1, params['host'])
 			success("Printing completed")
 		end
 	rescue CloneStoreRuntimeError => e

@@ -32,19 +32,25 @@ class PrintRemote
 		end
 	end
 
-	def print(plasmid)
+	def print(plasmid, copies = 1, host = nil)
 		# Gather necessary data and calculate MAC
-		link = "http://cs.rec0de.net/#{plasmid.id}"
+		link = "http://cs.rec0de.net/?{plasmid.id}"
 		dateString = Time.at(plasmid.timeOfCreation).to_date.strftime('%Y/%m/%d')
+
 		text = "#{plasmid.id}\n#{dateString} | #{plasmid.initials}"
+
+		if(host != nil)
+			text += "\n #{host}\n#{plasmid.selectionMarkers.join(', ')}"
+		end
+		
 		current = (Time.now().to_i / 30).floor
-		mac = OpenSSL::HMAC.hexdigest(@digest, @secret, "#{link}|#{text}#{current}")
+		mac = OpenSSL::HMAC.hexdigest(@digest, @secret, "#{link}|#{text}|#{copies}|#{current}")
 
 		# Send POST request to print server
 		begin
 			res = Net::HTTP.start(@uri.host, @uri.port, use_ssl: (@uri.scheme == 'https')) do |http|
 				req = Net::HTTP::Post.new(@uri)
-				req.set_form_data('mac' => mac, 'text' => text, 'qrdata' => link)
+				req.set_form_data('mac' => mac, 'text' => text, 'qrdata' => link, 'copies' => copies)
 				http.request(req)
 			end
 

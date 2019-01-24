@@ -135,7 +135,8 @@ post '/print/:id' do
 		else
 			# Initialize remote if necessary
 			printRemote = db.getPrintRemote if printRemote == nil
-			printRemote.print(plasmid, 1, params['host'])
+			copies = params['copies'] ? params['copies'].to_i : 1
+			printRemote.print(plasmid, copies, params['host'])
 			success("Printing completed")
 		end
 	rescue CloneStoreRuntimeError => e
@@ -189,7 +190,6 @@ get '/storage/id/:id' do
 		status 500
 		errmsg(e.message)
 	end
-	errmsg("Not yet implemented")
 end
 
 # Get plasmid in given location

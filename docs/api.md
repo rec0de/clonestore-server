@@ -12,7 +12,7 @@ At this time, not authentication mechanisms are in place.
 
 ## Methods
 
-The API consists of three endpoints, `plasmid`, `storage` and `print`, as well as the root endpoint.
+The API consists of four endpoints, `plasmid`, `storage`, `search` and `print`, as well as the root endpoint.
 
 ### Server info
 
@@ -142,6 +142,32 @@ Marks the given storage slot as empty and available for new plasmids.
 | ---------- | ------ | -------------------------------------------------- |
 | type       | text   | Constant string `success`                          |
 | details    | text   | Human-readable status information                  |
+
+### Searching the database
+
+`GET /search/[mode]`
+
+Searches the database for matching entries given one of the search mode `description`, `creator`, `id`, `backbone` or `any`. The first three modes search only their respective data fields while `any` searches across the entire database, with some possible exceptions.
+In this implementation, `any` does not search time fields and fields that may contain multiple values (selection markers or plasmid features). 
+
+| Parameter  | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| mode       | text   | Search mode, see description above                 |
+| query      | text   | Text to search for                                 |
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `searchResultList`                 |
+| results    | array  | Array of search result objects                     |
+
+The objects in the `results` list have the following properties:
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| id         | text   | Unique ID of the plasmid                           |
+| createdBy  | text   | Name of the plasmid's creator                      |
+| description | text  | Description of the plasmid                         |
+
 
 ### Configuring the printer
 

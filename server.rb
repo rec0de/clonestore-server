@@ -209,3 +209,37 @@ get '/storage/loc/:loc' do
 		errmsg(e.message)
 	end
 end
+
+# Search endpoint
+get '/search/:mode' do
+	defaults()
+	begin
+		raise CloneStoreRuntimeError, "No search query given" if !params['query'] or params['query'] == '' 
+		query = params['query']
+
+		case params[:mode]
+			when 'creator'
+				mode = :createdBy
+			when 'description'
+				mode = :description
+			when 'id'
+				mode = :id
+			when 'backbone'
+				mode = :backbonePlasmid
+			when 'any'
+				mode = :any
+			else
+				raise CloneStoreRuntimeError, "Invalid search mode"
+		end
+
+		res = []
+		db.search(mode, query).each{ |row|
+			res.push({'id' => row['id'], 'createdBy' => row['createdBy'], 'description' => row['description']})
+		}
+
+		return {'type' => 'searchResultList', 'results' => res}.to_json
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end

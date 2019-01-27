@@ -12,7 +12,9 @@ class Database
 
 		"CREATE TABLE IF NOT EXISTS printers(url TEXT, name TEXT, location TEXT, secret TEXT);",
 
-		"CREATE TABLE IF NOT EXISTS idCounter(key TEXT, value INTEGER);"
+		"CREATE TABLE IF NOT EXISTS idCounter(key TEXT, value INTEGER);",
+
+		"CREATE VIRTUAL TABLE  IF NOT EXISTS search USING FTS5(id, createdBy, initials, labNotes, description, backbonePlasmid);"
 	]
 
 	def initialize(file)
@@ -70,6 +72,16 @@ class Database
 
 			# Increment the global ID counter to get a fresh ID next time
 			incrementIdCounter()
+
+			# Update search index
+			stm = @db.prepare("INSERT INTO search(id, createdBy, initials, labNotes, description, backbonePlasmid) VALUES(?, ?, ?, ?, ?, ?);")
+			stm.bind_param(1, plasmid.id)
+			stm.bind_param(2, plasmid.createdBy)
+			stm.bind_param(3, plasmid.initials)
+			stm.bind_param(4, plasmid.labNotes)
+			stm.bind_param(5, plasmid.description)
+			stm.bind_param(6, plasmid.backbonePlasmid)
+			stm.execute
 
 			return plasmid.id
 		else
@@ -174,6 +186,28 @@ class Database
 	def getStorageLocations(plasmidID)
 		stm = @db.prepare("SELECT location, host FROM storageLocations WHERE plasmidID = ?;")
 		stm.bind_param(1, plasmidID)
+		stm.execute
+	end
+
+	# Searcg
+
+	def search(mode, term)
+		case mode
+			when :id
+				stm = @db.prepare("SELECT id, createdBy, description FROM search WHERE id MATCH ? ORDER BY rank;")
+			when :createdBy
+				stm = @db.prepare("SELECT id, createdBy, description FROM search WHERE createdBy MATCH ? ORDER BY rank;")
+			when :description
+				stm = @db.prepare("SELECT id, createdBy, description FROM search WHERE description MATCH ? ORDER BY rank;")
+			when :backbonePlasmid
+				stm = @db.prepare("SELECT id, createdBy, description FROM search WHERE backbonePlasmid MATCH ? ORDER BY rank;")
+			when :any
+				stm = @db.prepare("SELECT id, createdBy, description FROM search WHERE search MATCH ? ORDER BY rank;")
+			else
+				raise CloneStoreDatabaseError, "Incorrect mode supplied to search function"
+		end
+
+		stm.bind_param(1, term)
 		stm.execute
 	end
 

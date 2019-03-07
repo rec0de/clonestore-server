@@ -14,7 +14,7 @@ class Database
 
 		"CREATE TABLE IF NOT EXISTS idCounter(key TEXT, value INTEGER);",
 
-		"CREATE VIRTUAL TABLE  IF NOT EXISTS search USING FTS5(id, createdBy, initials, labNotes, description, backbonePlasmid);"
+		"CREATE VIRTUAL TABLE  IF NOT EXISTS search USING FTS5(id, createdBy, initials, labNotes, description, backbonePlasmid, misc);"
 	]
 
 	def initialize(file)
@@ -74,13 +74,15 @@ class Database
 			incrementIdCounter()
 
 			# Update search index
-			stm = @db.prepare("INSERT INTO search(id, createdBy, initials, labNotes, description, backbonePlasmid) VALUES(?, ?, ?, ?, ?, ?);")
+			misc = plasmid.selectionMarkers.concat(plasmid.features).join(' ')
+			stm = @db.prepare("INSERT INTO search(id, createdBy, initials, labNotes, description, backbonePlasmid, misc) VALUES(?, ?, ?, ?, ?, ?, ?);")
 			stm.bind_param(1, plasmid.id)
 			stm.bind_param(2, plasmid.createdBy)
 			stm.bind_param(3, plasmid.initials)
 			stm.bind_param(4, plasmid.labNotes)
 			stm.bind_param(5, plasmid.description)
 			stm.bind_param(6, plasmid.backbonePlasmid)
+			stm.bind_param(7, misc)
 			stm.execute
 
 			return plasmid.id
@@ -189,7 +191,7 @@ class Database
 		stm.execute
 	end
 
-	# Searcg
+	# Search
 
 	def search(mode, term)
 		case mode

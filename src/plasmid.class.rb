@@ -66,13 +66,15 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 
 		parsed['features'].each{ |feature|
 			res.addFeature(feature)
-		}
+		} if parsed['features'] != nil
+
 		parsed['selectionMarkers'].each{ |marker|
 			res.addSelectionMarker(marker)
-		}
+		} if parsed['selectionMarkers'] != nil
+		
 		parsed['ORFs'].each{ |orf|
 			res.addORF(orf)
-		}
+		} if parsed['ORFs'] != nil
 
 		return res
 	end

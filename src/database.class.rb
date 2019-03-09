@@ -4,12 +4,14 @@ require_relative 'printremote.class'
 
 class Database
 	@@createStatements = [
-		"CREATE TABLE IF NOT EXISTS plasmids(id TEXT PRIMARY KEY, createdBy TEXT, initials TEXT, labNotes TEXT, description TEXT, backbonePlasmid TEXT, timeOfEntry INTEGER, timeOfCreation INTEGER, geneData BLOB, isArchived BOOLEAN);",
-		"CREATE TABLE IF NOT EXISTS selectionMarkers(plasmidID INTEGER, marker TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, marker));",
-		"CREATE TABLE IF NOT EXISTS plasmidFeatures(plasmidID INTEGER, hasFeature TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, hasFeature));",
-		"CREATE TABLE IF NOT EXISTS plasmidORFs(plasmidID, hasORF TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, hasORF));",
+		"PRAGMA foreign_keys = ON;",
 
-		"CREATE TABLE IF NOT EXISTS storageLocations(location TEXT, plasmidID TEXT, host TEXT, CONSTRAINT locUnique UNIQUE (location));",
+		"CREATE TABLE IF NOT EXISTS plasmids(id TEXT PRIMARY KEY, createdBy TEXT, initials TEXT, labNotes TEXT, description TEXT, backbonePlasmid TEXT, timeOfEntry INTEGER, timeOfCreation INTEGER, geneData BLOB, isArchived BOOLEAN);",
+		"CREATE TABLE IF NOT EXISTS selectionMarkers(plasmidID INTEGER, marker TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, marker), FOREIGN KEY(plasmidID) REFERENCES plasmids(id));",
+		"CREATE TABLE IF NOT EXISTS plasmidFeatures(plasmidID INTEGER, hasFeature TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, hasFeature), FOREIGN KEY(plasmidID) REFERENCES plasmids(id));",
+		"CREATE TABLE IF NOT EXISTS plasmidORFs(plasmidID, hasORF TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, hasORF), FOREIGN KEY(plasmidID) REFERENCES plasmids(id));",
+
+		"CREATE TABLE IF NOT EXISTS storageLocations(location TEXT, plasmidID TEXT, host TEXT, CONSTRAINT locUnique UNIQUE (location), FOREIGN KEY(plasmidID) REFERENCES plasmids(id));",
 
 		"CREATE TABLE IF NOT EXISTS printers(url TEXT, name TEXT, location TEXT, secret TEXT);",
 

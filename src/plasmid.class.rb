@@ -1,11 +1,12 @@
 require 'set'
 require 'json'
 
-class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :backbonePlasmid, :timeOfEntry, :timeOfCreation, :geneData, :features, :selectionMarkers
+class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :backbonePlasmid, :timeOfEntry, :timeOfCreation, :geneData, :features, :selectionMarkers, :ORFs
 
 	def initialize(createdBy, initials, desc, labnotes, backbone, geneData, timeCreated, timeOfEntry = nil, id = nil)
 		@features = Set.new
 		@selectionMarkers = Set.new
+		@ORFs = Set.new
 		@createdBy = createdBy
 		@initials = initials
 		@description = desc
@@ -23,6 +24,10 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 
 	def addSelectionMarker(marker)
 		@selectionMarkers.add(marker)
+	end
+
+	def addORF(orf)
+		@ORFs.add(orf)
 	end
 
 	def setIdNum(id)
@@ -65,6 +70,9 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 		parsed['selectionMarkers'].each{ |marker|
 			res.addSelectionMarker(marker)
 		}
+		parsed['ORFs'].each{ |orf|
+			res.addORF(orf)
+		}
 
 		return res
 	end
@@ -77,6 +85,7 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 			'backbonePlasmid' => @backbonePlasmid,
 			'features' => @features.to_a,
 			'selectionMarkers' => @selectionMarkers.to_a,
+			'ORFs' => @orfs.to_a,
 			'timeOfCreation' => @timeOfCreation,
 			'timeOfEntry' => @timeOfEntry,
 			'createdBy' => @createdBy,

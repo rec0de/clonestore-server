@@ -7,6 +7,7 @@ class Database
 		"CREATE TABLE IF NOT EXISTS plasmids(id TEXT PRIMARY KEY, createdBy TEXT, initials TEXT, labNotes TEXT, description TEXT, backbonePlasmid TEXT, timeOfEntry INTEGER, timeOfCreation INTEGER, geneData BLOB, isArchived BOOLEAN);",
 		"CREATE TABLE IF NOT EXISTS selectionMarkers(plasmidID INTEGER, marker TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, marker));",
 		"CREATE TABLE IF NOT EXISTS plasmidFeatures(plasmidID INTEGER, hasFeature TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, hasFeature));",
+		"CREATE TABLE IF NOT EXISTS plasmidORFs(plasmidID, hasORF TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, hasORF));",
 
 		"CREATE TABLE IF NOT EXISTS storageLocations(location TEXT, plasmidID TEXT, host TEXT, CONSTRAINT locUnique UNIQUE (location));",
 
@@ -70,6 +71,14 @@ class Database
 				stm.execute
 			}
 
+			# Insert ORF data
+			plasmid.ORFs.each { |orf|
+				stm = @db.prepare("INSERT INTO plasmidORFs(plasmidID, hasORF) VALUES (?, ?);")
+				stm.bind_param(1, plasmid.id)
+				stm.bind_param(2, orf)
+				stm.execute
+			}
+
 			# Increment the global ID counter to get a fresh ID next time
 			incrementIdCounter()
 
@@ -108,6 +117,11 @@ class Database
 			plasmid.addSelectionMarker(row['marker'])
 		}
 
+		# Fetch ORFs from database
+		getPlasmidORFs(id).each{ |row|
+			plasmid.addORF(row['hasORF'])
+		}
+
 		return plasmid
 	end
 
@@ -119,6 +133,12 @@ class Database
 
 	def getSelectionMarkers(id)
 		stm = @db.prepare("SELECT marker FROM selectionMarkers WHERE plasmidID = ?;")
+		stm.bind_param(1, id)
+		stm.execute
+	end
+
+	def getPlasmidORFs(id)
+		stm = @db.prepare("SELECT hasORF FROM plasmidORFs WHERE plasmidID = ?;")
 		stm.bind_param(1, id)
 		stm.execute
 	end
@@ -148,7 +168,7 @@ class Database
 		stm.execute
 	end
 
-	def getPrintRemote
+	def getPrintRemote(frontendURL)
 		stm = @db.prepare("SELECT url, secret FROM printers LIMIT 1;")
 		data = stm.execute.next
 
@@ -156,7 +176,7 @@ class Database
 			raise CloneStoreDatabaseError, "No printer configured"
 		end
 
-		PrintRemote.new(data['url'], data['secret'])
+		PrintRemote.new(data['url'], data['secret'], frontendURL)
 	end
 
 	# Storage management

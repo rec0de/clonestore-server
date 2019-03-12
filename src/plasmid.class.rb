@@ -64,17 +64,13 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 		
 		res = Plasmid::fromHash(parsed)
 
-		parsed['features'].each{ |feature|
-			res.addFeature(feature)
-		} if parsed['features'] != nil
+		aFeature = res.method(:addFeature)
+		aSelMark = res.method(:addSelectionMarker)
+		aORF = res.method(:addORF)
 
-		parsed['selectionMarkers'].each{ |marker|
-			res.addSelectionMarker(marker)
-		} if parsed['selectionMarkers'] != nil
-		
-		parsed['ORFs'].each{ |orf|
-			res.addORF(orf)
-		} if parsed['ORFs'] != nil
+		parsed['features'].each(&aFeature) if parsed['features'] != nil
+		parsed['selectionMarkers'].each(&aSelMark) if parsed['selectionMarkers'] != nil
+		parsed['ORFs'].each(&aORF) if parsed['ORFs'] != nil
 
 		return res
 	end

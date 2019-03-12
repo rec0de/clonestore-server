@@ -70,8 +70,6 @@ Mark a plasmid as archived without actually deleting any information. This frees
 | type       | text   | Constant string `success`                          |
 | details    | text   | Human-readable status information                  |
 
-### Modifying plasmid data
-
 ### Setting a plasmid storage location
 
 `PUT /storage/[location]`
@@ -148,7 +146,6 @@ Marks the given storage slot as empty and available for new plasmids.
 `GET /search/[mode]`
 
 Searches the database for matching entries given one of the search mode `description`, `creator`, `id`, `backbone` or `any`. The first three modes search only their respective data fields while `any` searches across the entire database, with some possible exceptions.
-In this implementation, `any` does not search time fields and fields that may contain multiple values (selection markers or plasmid features). 
 
 | Parameter  | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |

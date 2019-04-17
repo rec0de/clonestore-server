@@ -85,7 +85,7 @@ class Database
 			incrementIdCounter()
 
 			# Update search index
-			misc = plasmid.selectionMarkers.concat(plasmid.features).join(' ')
+			misc = plasmid.selectionMarkers.to_a.concat(plasmid.features.to_a).concat(plasmid.ORFs.to_a).join(' ')
 			stm = @db.prepare("INSERT INTO search(id, createdBy, initials, labNotes, description, backbonePlasmid, misc) VALUES(?, ?, ?, ?, ?, ?, ?);")
 			stm.bind_param(1, plasmid.id)
 			stm.bind_param(2, plasmid.createdBy)

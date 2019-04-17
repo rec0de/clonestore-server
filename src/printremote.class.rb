@@ -4,11 +4,12 @@ require 'json'
 
 class PrintRemote
 
-	def initialize(url, secret)
+	def initialize(url, secret, frontendURL)
 		raise CloneStorePrintRemoteError, "Invalid printer URL" if ! url =~ URI::regexp
 		@uri = URI.parse(url)
 		@secret = secret
 		@digest = OpenSSL::Digest.new('sha256')
+		@urlTemplate = frontendURL
 	end
 
 	def status
@@ -34,7 +35,7 @@ class PrintRemote
 
 	def print(plasmid, copies = 1, host = nil)
 		# Gather necessary data and calculate MAC
-		link = "http://cs.rec0de.net/?{plasmid.id}"
+		link = @urlTemplate.gsub("[plasmidid]", plasmid.id)
 		dateString = Time.at(plasmid.timeOfCreation).to_date.strftime('%Y/%m/%d')
 
 		text = "#{plasmid.id}\n#{dateString} | #{plasmid.initials}"

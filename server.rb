@@ -7,7 +7,10 @@ require_relative 'src/printremote.class'
 
 version = '0.1.0'
 
-db = Database.new('test.sqlite')
+$frontendURL = "http://cs.rec0de.net/?[plasmidid]"
+$databaseFile = "test.sqlite"
+
+db = Database.new($databaseFile)
 printRemote = nil
 
 # Listen globally
@@ -99,7 +102,7 @@ get '/print' do
 	defaults()
 	begin
 		# Initialize remote if necessary
-		printRemote = db.getPrintRemote if printRemote == nil
+		printRemote = db.getPrintRemote($frontendURL) if printRemote == nil
 		"{\"type\": \"printerStatus\", \"online\": #{printRemote.status}}"	
 	rescue CloneStoreRuntimeError => e
 		status 500
@@ -116,7 +119,7 @@ put '/print' do
 		end
 		db.setupPrinter(params['url'], params['name'], params['location'], params['authKey'])
 		# Re-Initialize remote
-		printRemote = db.getPrintRemote
+		printRemote = db.getPrintRemote($frontendURL)
 		success('Printer setup successfully')
 	rescue CloneStoreRuntimeError => e
 		status 500
@@ -134,7 +137,7 @@ post '/print/:id' do
 			errmsg("No plasmid with given ID")
 		else
 			# Initialize remote if necessary
-			printRemote = db.getPrintRemote if printRemote == nil
+			printRemote = db.getPrintRemote($frontendURL) if printRemote == nil
 			copies = params['copies'] ? params['copies'].to_i : 1
 			printRemote.print(plasmid, copies, params['host'])
 			success("Printing completed")

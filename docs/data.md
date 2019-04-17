@@ -21,6 +21,7 @@ Plasmids are represented as JSON Objects of the following structure:
 | timeOfEntry | no        | UNIX timestamp when the plasmid was added  | `1546442964`  |
 | features    | no        | List of plasmid features (strings)         | `["Magnicon","Terminator"]` |
 | selectionMarkers | no   | List of selectionMarkers (strings)         | `["Tetracyclin"]` |
+| ORFs        | no        | List of contained ORFs (strings)           | ?             |
 | geneData    | no        | DNA basepair data of the plasmid, in .gb format | --       |
 
 Fields marked as required must be present when adding a new plasmid, others may be set automatically (id, timeOfEntry) or can be added later.

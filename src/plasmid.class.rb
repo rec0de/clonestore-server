@@ -83,7 +83,7 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 			'backbonePlasmid' => @backbonePlasmid,
 			'features' => @features.to_a,
 			'selectionMarkers' => @selectionMarkers.to_a,
-			'ORFs' => @orfs.to_a,
+			'ORFs' => @ORFs.to_a,
 			'timeOfCreation' => @timeOfCreation,
 			'timeOfEntry' => @timeOfEntry,
 			'createdBy' => @createdBy,

@@ -141,6 +141,51 @@ Marks the given storage slot as empty and available for new plasmids.
 | type       | text   | Constant string `success`                          |
 | details    | text   | Human-readable status information                  |
 
+### Viewing a microorganism
+
+`GET /organism/[id]`
+
+Returns a JSON representation of the requested microorganism if found, or a 404 error otherwise.
+
+| Parameter  | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| id         | text   | Unique ID of the requested organism, format `mXY0123` |
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `microorganism`                    |
+| microorganism | json   | The requested microorganism JSON representation |
+
+### Creating a microorganism
+
+`POST /organism`
+
+Adds a new microorganism to the database. If the organism supplied does not have an ID, a new one will be generated using sequential numbering.
+
+| Parameter  | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| data       | text   | JSON-representation of the microorganism to be added |
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `plasmidID`                        |
+| id         | text   | Unique ID of the inserted microorganism, format `mXY123`  |
+
+### Archiving a microorganism
+
+`DELETE /organism/[id]`
+
+Mark a microorganism as archived without actually deleting any information. Viewing the organism data using its unique ID will still work as before.
+
+| Parameter  | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| id         | text   | Unique ID of the requested microorganism, format `mXY123` |
+
+| Property   | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| type       | text   | Constant string `success`                          |
+| details    | text   | Human-readable status information                  |
+
 ### Searching the database
 
 `GET /search/[mode]`
@@ -197,14 +242,16 @@ Checks if the currently connected printer (not the device hosting the print serv
 
 ### Printing stickers
 
-`POST /print/[id]`
+`POST /print/[type]/[id]`
 
-Sends a print request for the selected plasmid to the printer. This request may take a long time to complete.
-If the optional `host` parameter is present, the host value will be printed on the label together with the plasmid selection markers. Otherwise, only `id`, `timeOfCreation` and `initials` will be printed.
+Sends a print request for the selected object to the printer. This request may take a long time to complete.
+Objects to print may be either plasmids or microorganisms, indicated by the `type` parameter.
+If the optional `host` parameter is present, the host value will be printed on the label together with the plasmid selection markers.
 
 | Parameter  | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |
-| id         | text   | Unique ID of the requested plasmid, format `pXY123` |
+| type       | text   | `p` for plasmids, `m` for microorganisms           |
+| id         | text   | Unique ID of the requested object, format `pXY123` |
 | host       | text   | Bacterial Host to be printed on label, optional    |
 | copies     | int    | Number of labels to print, optional (default 1)    |
 

@@ -33,17 +33,19 @@ class PrintRemote
 		end
 	end
 
-	def print(plasmid, copies = 1, host = nil)
-		# Gather necessary data and calculate MAC
-		link = @urlTemplate.gsub("[plasmidid]", plasmid.id)
-		dateString = Time.at(plasmid.timeOfCreation).to_date.strftime('%Y/%m/%d')
+	def print(object, copies = 1, additionalInfo = nil)
 
-		text = "#{plasmid.id}\n#{dateString} | #{plasmid.initials}"
+		raise CloneStoreRuntimeError, "Can't print non-printable object" unless (object.is_a? Plasmid) || (object.is_a? Microorganism)
 
-		if(host != nil)
-			text += "\n #{host}\n#{plasmid.selectionMarkers.to_a.join(', ')}"
-		end
+		# Get label data from object instance
+		link = object.getLink(@urlTemplate)
+		text = object.getLabelText(additionalInfo)
 		
+		printPlain(link, text, copies)
+	end
+
+	def printPlain(link, text, copies)
+		# Calculate MAC
 		current = (Time.now().to_i / 30).floor
 		mac = OpenSSL::HMAC.hexdigest(@digest, @secret, "#{link}|#{text}|#{copies}|#{current}")
 
@@ -58,6 +60,8 @@ class PrintRemote
 			response = JSON.parse(res.body)
 		rescue Errno::EHOSTUNREACH
 			raise CloneStorePrintRemoteError, "Print Server is unreachable"
+		rescue Errno::EHOSTUNREACH
+			raise CloneStorePrintRemoteError, "Connection to printer refused"
 		rescue JSON::ParserError
 			raise CloneStorePrintRemoteError, "Network request got malformed response"
 		end

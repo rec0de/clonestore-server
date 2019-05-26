@@ -83,7 +83,7 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 			'backbonePlasmid' => @backbonePlasmid,
 			'features' => @features.to_a,
 			'selectionMarkers' => @selectionMarkers.to_a,
-			'ORFs' => @orfs.to_a,
+			'ORFs' => @ORFs.to_a,
 			'timeOfCreation' => @timeOfCreation,
 			'timeOfEntry' => @timeOfEntry,
 			'createdBy' => @createdBy,
@@ -92,6 +92,23 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 		}
 
 		return JSON.generate(obj)
+	end
+
+	def getLink(template)
+		template.gsub("[typeid]", "p").gsub("[objectid]", @id)
+	end
+
+	def getLabelText(info)
+
+		dateString = Time.at(@timeOfCreation).to_date.strftime('%Y/%m/%d')
+
+		text = "#{@id}\n#{dateString} | #{@initials}"
+
+		if(info != nil)
+			text += "\n #{info}\n#{@selectionMarkers.to_a.join(', ')}"
+		end
+
+		return text
 	end
 
 end

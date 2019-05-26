@@ -7,7 +7,7 @@ require_relative 'src/printremote.class'
 
 version = '0.1.0'
 
-$frontendURL = "http://cs.rec0de.net/?[plasmidid]"
+$frontendURL = "http://cs.rec0de.net/?[typeid]-[objectid]"
 $databaseFile = "test.sqlite"
 
 db = Database.new($databaseFile)
@@ -75,7 +75,7 @@ post '/plasmid' do
 	defaults()
 	begin
 		plasmid = Plasmid::fromJSON(params['data'])
-		id = db.insert(plasmid)
+		id = db.insertPlasmid(plasmid)
 		status 200
 		plasmidIdMsg(id)
 	rescue CloneStoreRuntimeError => e
@@ -89,8 +89,52 @@ delete '/plasmid/:id' do
 	defaults()
 	begin
 		raise CloneStoreRuntimeError, "Plasmid does not exist" if db.getPlasmid(params[:id]) === nil
-		db.setArchiveFlag(params[:id])
+		db.archivePlasmid(params[:id])
 		success("Plasmid archived successfully")
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end
+
+# Get microorganism
+get '/organism/:id' do
+	defaults()
+	begin
+		microorganism = db.getMicroorganism(params[:id])
+		if microorganism == nil
+			status 404
+			errmsg("Microorganism does not exist")
+		else
+			"{\"type\": \"microorganism\", \"microorganism\": #{microorganism.to_json}}"
+		end
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end
+
+# Add microorganism
+post '/organism' do
+	defaults()
+	begin
+		microorganism = Microorganism::fromJSON(params['data'])
+		id = db.insertMicroorganism(microorganism)
+		status 200
+		plasmidIdMsg(id)
+	rescue CloneStoreRuntimeError => e
+		status 400
+		errmsg(e.message)
+	end
+end
+
+# Archive microorganism
+delete '/organism/:id' do
+	defaults()
+	begin
+		raise CloneStoreRuntimeError, "Microorganism does not exist" if db.getMicroorganism(params[:id]) === nil
+		db.archiveMicroorganism(params[:id])
+		success("Microorganism archived successfully")
 	rescue CloneStoreRuntimeError => e
 		status 500
 		errmsg(e.message)
@@ -127,8 +171,8 @@ put '/print' do
 	end
 end
 
-# Print label
-post '/print/:id' do
+# Print plasmid label
+post '/print/p/:id' do
 	defaults()
 	begin
 		plasmid = db.getPlasmid(params[:id])
@@ -140,6 +184,27 @@ post '/print/:id' do
 			printRemote = db.getPrintRemote($frontendURL) if printRemote == nil
 			copies = params['copies'] ? params['copies'].to_i : 1
 			printRemote.print(plasmid, copies, params['host'])
+			success("Printing completed")
+		end
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end
+
+# Print microorganism label
+post '/print/m/:id' do
+	defaults()
+	begin
+		microorganism = db.getMicroorganism(params[:id])
+		if microorganism == nil
+			status 404
+			errmsg("No microorganism with given ID")
+		else
+			# Initialize remote if necessary
+			printRemote = db.getPrintRemote($frontendURL) if printRemote == nil
+			copies = params['copies'] ? params['copies'].to_i : 1
+			printRemote.print(microorganism, copies)
 			success("Printing completed")
 		end
 	rescue CloneStoreRuntimeError => e

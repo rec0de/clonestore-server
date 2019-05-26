@@ -1,5 +1,6 @@
 require 'sqlite3'
 require_relative 'plasmid.class'
+require_relative 'microorganism.class'
 require_relative 'printremote.class'
 
 class Database
@@ -11,13 +12,14 @@ class Database
 		"CREATE TABLE IF NOT EXISTS plasmidFeatures(plasmidID INTEGER, hasFeature TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, hasFeature), FOREIGN KEY(plasmidID) REFERENCES plasmids(id));",
 		"CREATE TABLE IF NOT EXISTS plasmidORFs(plasmidID, hasORF TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, hasORF), FOREIGN KEY(plasmidID) REFERENCES plasmids(id));",
 
+		"CREATE TABLE IF NOT EXISTS microorganisms(id TEXT PRIMARY KEY, createdBy TEXT, initials TEXT, labNotes TEXT, organism TEXT, resistance TEXT, plasmid TEXT, timeOfEntry INTEGER, timeOfCreation INTEGER, destroyed BOOLEAN, FOREIGN KEY (plasmid) REFERENCES plasmids(id));",
+
 		"CREATE TABLE IF NOT EXISTS storageLocations(location TEXT, plasmidID TEXT, host TEXT, CONSTRAINT locUnique UNIQUE (location), FOREIGN KEY(plasmidID) REFERENCES plasmids(id));",
 
-		"CREATE TABLE IF NOT EXISTS printers(url TEXT, name TEXT, location TEXT, secret TEXT);",
+		"CREATE VIRTUAL TABLE  IF NOT EXISTS search USING FTS5(id, createdBy, initials, labNotes, description, backbonePlasmid, misc);",
 
 		"CREATE TABLE IF NOT EXISTS idCounter(key TEXT, value INTEGER);",
-
-		"CREATE VIRTUAL TABLE  IF NOT EXISTS search USING FTS5(id, createdBy, initials, labNotes, description, backbonePlasmid, misc);"
+		"CREATE TABLE IF NOT EXISTS printers(url TEXT, name TEXT, location TEXT, secret TEXT);"
 	]
 
 	def initialize(file)
@@ -29,7 +31,9 @@ class Database
 		}
 	end
 
-	def insert(plasmid)
+	# Plasmids
+
+	def insertPlasmid(plasmid)
 		if plasmid.is_a? Plasmid
 			# Perform sanity check
 			plasmid.sanityCheck
@@ -98,7 +102,7 @@ class Database
 
 			return plasmid.id
 		else
-			raise CloneStoreDatabaseError, 'Can\'t insert something that is not a Plasmid object'
+			raise CloneStoreDatabaseError, 'Trying to insert a non-plasmid as a plasmid'
 		end
 	end
 
@@ -147,13 +151,69 @@ class Database
 		stm.execute
 	end
 
-	def setArchiveFlag(id, flag = 1)
+	def archivePlasmid(id, flag = 1)
 		if flag == 1
 			stm = @db.prepare("DELETE FROM storageLocations WHERE plasmidID = ?;")
 			stm.bind_param(1, id)
 			stm.execute
 		end
 		stm = @db.prepare("UPDATE plasmids SET isArchived = ? WHERE id = ?;")
+		stm.bind_param(1, flag)
+		stm.bind_param(2, id)
+		stm.execute
+	end
+
+	# Microorganisms
+
+	def insertMicroorganism(microorganism)
+		if microorganism.is_a? Microorganism
+			# Perform sanity check
+			microorganism.sanityCheck
+
+			# Calculate ID if not already set
+			if microorganism.id == nil
+				microorganism.setIdNum(getNewId())
+			end
+
+			# Insert main plasmid data
+			stm = @db.prepare("INSERT INTO microorganisms(id, createdBy, initials, labNotes, organism, resistance, plasmid, timeOfEntry, timeOfCreation, destroyed) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 0);")
+			stm.bind_param(1, microorganism.id)
+			stm.bind_param(2, microorganism.createdBy)
+			stm.bind_param(3, microorganism.initials)
+			stm.bind_param(4, microorganism.labNotes)
+			stm.bind_param(5, microorganism.organism)
+			stm.bind_param(6, microorganism.resistance)
+			stm.bind_param(7, microorganism.plasmid == '' ? nil : microorganism.plasmid)
+			stm.bind_param(8, microorganism.timeOfEntry)
+			stm.bind_param(9, microorganism.timeOfCreation)
+
+			begin
+				stm.execute
+			rescue SQLite3::ConstraintException
+				raise CloneStoreDatabaseError, "Could not save microorganism - ID is not unique or referenced plasmid does not exist"
+			end
+
+			# Increment the global ID counter to get a fresh ID next time
+			incrementIdCounter()
+
+			return microorganism.id
+		else
+			raise CloneStoreDatabaseError, 'Trying to insert a non-microorganism as a microorganism'
+		end
+	end
+
+	def getMicroorganism(id)
+		stm = @db.prepare("SELECT * FROM microorganisms WHERE id = ?;")
+		stm.bind_param(1, id)
+		rs = stm.execute.next # Get only the first returned value
+
+		return nil if rs == nil
+
+		Microorganism::fromHash(rs)
+	end
+
+	def archiveMicroorganism(id, flag = 1)
+		stm = @db.prepare("UPDATE microorganisms SET destroyed = ? WHERE id = ?;")
 		stm.bind_param(1, flag)
 		stm.bind_param(2, id)
 		stm.execute
@@ -238,7 +298,7 @@ class Database
 	# ID generation
 
 	def getNewId
-		stm = @db.prepare("SELECT value FROM idCounter WHERE key = 'global'")
+		stm = @db.prepare("SELECT value FROM idCounter WHERE key = 'global';")
 		rs = stm.execute.next
 
 		# Insert first value if counter is not initialized
@@ -252,7 +312,7 @@ class Database
 	end
 
 	def incrementIdCounter
-		stm = @db.prepare("UPDATE idCounter SET value = value + 1 WHERE key = 'global'")
+		stm = @db.prepare("UPDATE idCounter SET value = value + 1 WHERE key = 'global';")
 		stm.execute
 	end
 

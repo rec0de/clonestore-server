@@ -52,7 +52,7 @@ Adds a new plasmid to the database. If the plasmid supplied does not have an ID,
 
 | Property   | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |
-| type       | text   | Constant string `plasmidID`                        |
+| type       | text   | Constant string `objectID`                         |
 | id         | text   | Unique ID of the inserted plasmid, format `pXY123`  |
 
 ### Archiving a plasmid
@@ -147,14 +147,14 @@ Marks the given storage slot as empty and available for new plasmids.
 
 Returns a JSON representation of the requested microorganism if found, or a 404 error otherwise.
 
-| Parameter  | Format | Description                                        |
-| ---------- | ------ | -------------------------------------------------- |
+| Parameter  | Format | Description                                           |
+| ---------- | ------ | ----------------------------------------------------- |
 | id         | text   | Unique ID of the requested organism, format `mXY0123` |
 
-| Property   | Format | Description                                        |
-| ---------- | ------ | -------------------------------------------------- |
-| type       | text   | Constant string `microorganism`                    |
-| microorganism | json   | The requested microorganism JSON representation |
+| Property   | Format | Description                                           |
+| ---------- | ------ | ----------------------------------------------------- |
+| type       | text   | Constant string `microorganism`                       |
+| microorganism | json   | The requested microorganism JSON representation    |
 
 ### Creating a microorganism
 
@@ -162,13 +162,13 @@ Returns a JSON representation of the requested microorganism if found, or a 404 
 
 Adds a new microorganism to the database. If the organism supplied does not have an ID, a new one will be generated using sequential numbering.
 
-| Parameter  | Format | Description                                        |
-| ---------- | ------ | -------------------------------------------------- |
-| data       | text   | JSON-representation of the microorganism to be added |
+| Parameter  | Format | Description                                               |
+| ---------- | ------ | --------------------------------------------------------- |
+| data       | text   | JSON-representation of the microorganism to be added      |
 
-| Property   | Format | Description                                        |
-| ---------- | ------ | -------------------------------------------------- |
-| type       | text   | Constant string `plasmidID`                        |
+| Property   | Format | Description                                               |
+| ---------- | ------ | --------------------------------------------------------- |
+| type       | text   | Constant string `objectID`                                |
 | id         | text   | Unique ID of the inserted microorganism, format `mXY123`  |
 
 ### Archiving a microorganism
@@ -177,9 +177,54 @@ Adds a new microorganism to the database. If the organism supplied does not have
 
 Mark a microorganism as archived without actually deleting any information. Viewing the organism data using its unique ID will still work as before.
 
+| Parameter  | Format | Description                                               |
+| ---------- | ------ | --------------------------------------------------------- |
+| id         | text   | Unique ID of the requested microorganism, format `mXY123` |
+
+| Property   | Format | Description                                               |
+| ---------- | ------ | --------------------------------------------------------- |
+| type       | text   | Constant string `success`                                 |
+| details    | text   | Human-readable status information                         |
+
+### Viewing a generic object
+
+`GET /generic/[id]`
+
+Returns a JSON representation of the requested object if found, or a 404 error otherwise.
+
+| Parameter  | Format | Description                                                 |
+| ---------- | ------ | ----------------------------------------------------------- |
+| id         | text   | Unique ID of the requested generic object, format `gXY0123` |
+
+| Property   | Format | Description                                                 |
+| ---------- | ------ | ----------------------------------------------------------- |
+| type       | text   | Constant string `genericobject`                             |
+| genericobject | json   | The requested generic object JSON representation         |
+
+### Creating a generic object
+
+`POST /generic`
+
+Adds a new generic object to the database. If the object supplied does not have an ID, a new one will be generated using sequential numbering.
+
+| Parameter  | Format | Description                                               |
+| ---------- | ------ | --------------------------------------------------------- |
+| data       | text   | JSON-representation of the generic object to be added     |
+
+| Property   | Format | Description                                               |
+| ---------- | ------ | --------------------------------------------------------- |
+| type       | text   | Constant string `objectID`                                |
+| id         | text   | Unique ID of the inserted microorganism, format `gXY123`  |
+
+### Archiving a generic object
+
+`DELETE /generic/[id]`
+
+Mark a generic object as archived without actually deleting any information. Viewing the object data using its unique ID will still work as before.
+
 | Parameter  | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |
-| id         | text   | Unique ID of the requested microorganism, format `mXY123` |
+| id         | text   | Unique ID of the requested object, format `gXY123` |
 
 | Property   | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |
@@ -235,9 +280,9 @@ Updates or creates the printer used to print labels. In the process, any printer
 
 Checks if the currently connected printer (not the device hosting the print server) is turned on and ready to print.
 
-| Property   | Format | Description                                        |
-| ---------- | ------ | -------------------------------------------------- |
-| type       | text   | Constant string `printerStatus`                    |
+| Property   | Format | Description                                                   |
+| ---------- | ------ | ------------------------------------------------------------- |
+| type       | text   | Constant string `printerStatus`                               |
 | online     | bool   | `true` if the printer is online and ready, `false` otherwise  |
 
 ### Printing stickers
@@ -245,15 +290,15 @@ Checks if the currently connected printer (not the device hosting the print serv
 `POST /print/[type]/[id]`
 
 Sends a print request for the selected object to the printer. This request may take a long time to complete.
-Objects to print may be either plasmids or microorganisms, indicated by the `type` parameter.
+Objects to print may be either plasmids, microorganisms, or generic objects, indicated by the `type` parameter.
 If the optional `host` parameter is present, the host value will be printed on the label together with the plasmid selection markers.
 
-| Parameter  | Format | Description                                        |
-| ---------- | ------ | -------------------------------------------------- |
-| type       | text   | `p` for plasmids, `m` for microorganisms           |
-| id         | text   | Unique ID of the requested object, format `pXY123` |
-| host       | text   | Bacterial Host to be printed on label, optional    |
-| copies     | int    | Number of labels to print, optional (default 1)    |
+| Parameter  | Format | Description                                                       |
+| ---------- | ------ | ----------------------------------------------------------------- |
+| type       | text   | `p` for plasmids, `m` for microorganisms, `g` for generic objects |
+| id         | text   | Unique ID of the requested object, format `pXY123`                |
+| host       | text   | Bacterial Host to be printed on label, optional, plasmids only    |
+| copies     | int    | Number of labels to print, optional (default 1)                   |
 
 | Property   | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |

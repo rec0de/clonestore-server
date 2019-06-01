@@ -19,7 +19,7 @@ class Database
 
 		"CREATE TABLE IF NOT EXISTS storageLocations(location TEXT, plasmidID TEXT, host TEXT, CONSTRAINT locUnique UNIQUE (location), FOREIGN KEY(plasmidID) REFERENCES plasmids(id));",
 
-		"CREATE VIRTUAL TABLE  IF NOT EXISTS search USING FTS5(id, createdBy, initials, labNotes, description, backbonePlasmid, misc);",
+		"CREATE VIRTUAL TABLE  IF NOT EXISTS search USING FTS5(id, type, createdBy, initials, labNotes, description, misc);",
 
 		"CREATE TABLE IF NOT EXISTS idCounter(key TEXT, value INTEGER);",
 		"CREATE TABLE IF NOT EXISTS printers(url TEXT, name TEXT, location TEXT, secret TEXT);"
@@ -92,15 +92,14 @@ class Database
 			incrementIdCounter()
 
 			# Update search index
-			misc = plasmid.selectionMarkers.to_a.concat(plasmid.features.to_a).concat(plasmid.ORFs.to_a).join(' ')
-			stm = @db.prepare("INSERT INTO search(id, createdBy, initials, labNotes, description, backbonePlasmid, misc) VALUES(?, ?, ?, ?, ?, ?, ?);")
+			misc = plasmid.selectionMarkers.to_a.concat(plasmid.features.to_a).concat(plasmid.ORFs.to_a).join(' ') + ' ' + plasmid.backbonePlasmid.to_s
+			stm = @db.prepare("INSERT INTO search(id, type, createdBy, initials, labNotes, description, misc) VALUES(?, 'plasmid', ?, ?, ?, ?, ?);")
 			stm.bind_param(1, plasmid.id)
 			stm.bind_param(2, plasmid.createdBy)
 			stm.bind_param(3, plasmid.initials)
 			stm.bind_param(4, plasmid.labNotes)
 			stm.bind_param(5, plasmid.description)
-			stm.bind_param(6, plasmid.backbonePlasmid)
-			stm.bind_param(7, misc)
+			stm.bind_param(6, misc)
 			stm.execute
 
 			return plasmid.id
@@ -200,6 +199,18 @@ class Database
 			# Increment the global ID counter to get a fresh ID next time
 			incrementIdCounter()
 
+			# Update search index
+			misc = microorganism.storageLocation + ' ' + microorganism.resistance.to_s
+			description = microorganism.organism.to_s + ' ' + microorganism.plasmid.to_s
+			stm = @db.prepare("INSERT INTO search(id, type, createdBy, initials, labNotes, description, misc) VALUES(?, 'microorganism', ?, ?, ?, ?, ?);")
+			stm.bind_param(1, microorganism.id)
+			stm.bind_param(2, microorganism.createdBy)
+			stm.bind_param(3, microorganism.initials)
+			stm.bind_param(4, microorganism.labNotes)
+			stm.bind_param(5, description)
+			stm.bind_param(6, misc)
+			stm.execute
+
 			return microorganism.id
 		else
 			raise CloneStoreDatabaseError, 'Trying to insert a non-microorganism as a microorganism'
@@ -270,6 +281,17 @@ class Database
 
 			# Increment the global ID counter to get a fresh ID next time
 			incrementIdCounter()
+
+			# Update search index
+			misc = generic.storageLocation + ' ' + generic.refID.to_s
+			stm = @db.prepare("INSERT INTO search(id, type, createdBy, initials, labNotes, description, misc) VALUES(?, 'genericobject', ?, ?, ?, ?, ?);")
+			stm.bind_param(1, generic.id)
+			stm.bind_param(2, generic.createdBy)
+			stm.bind_param(3, generic.initials)
+			stm.bind_param(4, generic.labNotes)
+			stm.bind_param(5, generic.description)
+			stm.bind_param(6, misc)
+			stm.execute
 
 			return generic.id
 		else
@@ -364,15 +386,13 @@ class Database
 	def search(mode, term)
 		case mode
 			when :id
-				stm = @db.prepare("SELECT id, createdBy, description FROM search WHERE id MATCH ? ORDER BY rank;")
+				stm = @db.prepare("SELECT id, type, createdBy, description FROM search WHERE id MATCH ? ORDER BY rank;")
 			when :createdBy
-				stm = @db.prepare("SELECT id, createdBy, description FROM search WHERE createdBy MATCH ? ORDER BY rank;")
+				stm = @db.prepare("SELECT id, type, createdBy, description FROM search WHERE createdBy MATCH ? ORDER BY rank;")
 			when :description
-				stm = @db.prepare("SELECT id, createdBy, description FROM search WHERE description MATCH ? ORDER BY rank;")
-			when :backbonePlasmid
-				stm = @db.prepare("SELECT id, createdBy, description FROM search WHERE backbonePlasmid MATCH ? ORDER BY rank;")
+				stm = @db.prepare("SELECT id, type, createdBy, description FROM search WHERE description MATCH ? ORDER BY rank;")
 			when :any
-				stm = @db.prepare("SELECT id, createdBy, description FROM search WHERE search MATCH ? ORDER BY rank;")
+				stm = @db.prepare("SELECT id, type, createdBy, description FROM search WHERE search MATCH ? ORDER BY rank;")
 			else
 				raise CloneStoreDatabaseError, "Incorrect mode supplied to search function"
 		end

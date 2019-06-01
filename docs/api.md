@@ -235,7 +235,7 @@ Mark a generic object as archived without actually deleting any information. Vie
 
 `GET /search/[mode]`
 
-Searches the database for matching entries given one of the search mode `description`, `creator`, `id`, `backbone` or `any`. The first three modes search only their respective data fields while `any` searches across the entire database, with some possible exceptions.
+Searches the database for matching entries given one of the search mode `description`, `creator`, `id` or `any`. The first three modes search only their respective data fields while `any` searches across the entire database, with some possible exceptions.
 
 | Parameter  | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |
@@ -251,9 +251,10 @@ The objects in the `results` list have the following properties:
 
 | Property   | Format | Description                                        |
 | ---------- | ------ | -------------------------------------------------- |
-| id         | text   | Unique ID of the plasmid                           |
-| createdBy  | text   | Name of the plasmid's creator                      |
-| description | text  | Description of the plasmid                         |
+| id         | text   | Unique ID of the object                            |
+| type       | text   | Result type, one of `plasmid`, `microorganism` or `genericobject` |
+| createdBy  | text   | Name of the objects's creator                      |
+| description | text  | Description of the object                          |
 
 
 ### Configuring the printer

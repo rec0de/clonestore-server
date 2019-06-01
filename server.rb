@@ -357,8 +357,6 @@ get '/search/:mode' do
 				mode = :description
 			when 'id'
 				mode = :id
-			when 'backbone'
-				mode = :backbonePlasmid
 			when 'any'
 				mode = :any
 			else
@@ -367,7 +365,7 @@ get '/search/:mode' do
 
 		res = []
 		db.search(mode, query).each{ |row|
-			res.push({'id' => row['id'], 'createdBy' => row['createdBy'], 'description' => row['description']})
+			res.push({'id' => row['id'], 'type' => row['type'], 'createdBy' => row['createdBy'], 'description' => row['description']})
 		}
 
 		return {'type' => 'searchResultList', 'results' => res}.to_json

@@ -37,17 +37,17 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 	def sanityCheck
 		# Assert that all required values are present
 		if @createdBy == nil || @initials == nil
-			raise CloneStorePlasmidSanityError, 'Creator Name and Initials of plasmid have to be set'
+			raise CloneStoreObjectSanityError, 'Creator Name and Initials of plasmid have to be set'
 		end
 		
 		# Assert that time of creation is a somewhat sane unix timestamp and does not lie too far in the future
 		if !@timeOfCreation.is_a? Integer || @timeOfCreation > Time.now.to_i + 24 * 60 * 60 || @timeOfCreation < 0
-			raise CloneStorePlasmidSanityError, 'Time of creation value is not a valid timestamp'
+			raise CloneStoreObjectSanityError, 'Time of creation value is not a valid timestamp'
 		end
 
 		# Assert that time of entry is a somewhat sane unix timestamp and does not lie too far in the future
 		if !@timeOfEntry.is_a? Integer || @timeOfEntry > Time.now.to_i + 24 * 60 * 60 || @timeOfEntry < 0
-			raise CloneStorePlasmidSanityError, 'Time of entry value is not a valid timestamp'
+			raise CloneStoreObjectSanityError, 'Time of entry value is not a valid timestamp'
 		end
 	end
 
@@ -59,7 +59,7 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 		begin
 			parsed = JSON.parse(json)
 		rescue JSON::ParserError
-			raise CloneStorePlasmidSanityError, "Plasmid JSON data is corrupt"
+			raise CloneStoreObjectSanityError, "Plasmid JSON data is corrupt"
 		end
 		
 		res = Plasmid::fromHash(parsed)
@@ -116,5 +116,5 @@ end
 class CloneStoreRuntimeError < RuntimeError
 end
 
-class CloneStorePlasmidSanityError < CloneStoreRuntimeError
+class CloneStoreObjectSanityError < CloneStoreRuntimeError
 end

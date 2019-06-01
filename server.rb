@@ -31,9 +31,9 @@ def success(msg)
 	"{\"type\":\"success\", \"details\":\"#{msg}\"}"
 end
 
-# Plasmid ID message
-def plasmidIdMsg(id)
-	"{\"type\":\"plasmidID\", \"id\":\"#{id}\"}"
+# Object ID message
+def objectIdMsg(id)
+	"{\"type\":\"objectID\", \"id\":\"#{id}\"}"
 end
 
 # Storage location message (plasmidID and bacterial host)
@@ -77,7 +77,7 @@ post '/plasmid' do
 		plasmid = Plasmid::fromJSON(params['data'])
 		id = db.insertPlasmid(plasmid)
 		status 200
-		plasmidIdMsg(id)
+		objectIdMsg(id)
 	rescue CloneStoreRuntimeError => e
 		status 400
 		errmsg(e.message)
@@ -121,7 +121,7 @@ post '/organism' do
 		microorganism = Microorganism::fromJSON(params['data'])
 		id = db.insertMicroorganism(microorganism)
 		status 200
-		plasmidIdMsg(id)
+		objectIdMsg(id)
 	rescue CloneStoreRuntimeError => e
 		status 400
 		errmsg(e.message)
@@ -135,6 +135,50 @@ delete '/organism/:id' do
 		raise CloneStoreRuntimeError, "Microorganism does not exist" if db.getMicroorganism(params[:id]) === nil
 		db.archiveMicroorganism(params[:id])
 		success("Microorganism archived successfully")
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end
+
+# Get genericobject
+get '/generic/:id' do
+	defaults()
+	begin
+		genericobject = db.getGeneric(params[:id])
+		if genericobject == nil
+			status 404
+			errmsg("Generic Object does not exist")
+		else
+			"{\"type\": \"genericobject\", \"genericobject\": #{genericobject.to_json}}"
+		end
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end
+
+# Add genericobject
+post '/generic' do
+	defaults()
+	begin
+		genericobject = GenericObject::fromJSON(params['data'])
+		id = db.insertGeneric(genericobject)
+		status 200
+		objectIdMsg(id)
+	rescue CloneStoreRuntimeError => e
+		status 400
+		errmsg(e.message)
+	end
+end
+
+# Archive genericobject
+delete '/generic/:id' do
+	defaults()
+	begin
+		raise CloneStoreRuntimeError, "Generic Object does not exist" if db.getGeneric(params[:id]) === nil
+		db.archiveGeneric(params[:id])
+		success("Generic Object archived successfully")
 	rescue CloneStoreRuntimeError => e
 		status 500
 		errmsg(e.message)
@@ -205,6 +249,27 @@ post '/print/m/:id' do
 			printRemote = db.getPrintRemote($frontendURL) if printRemote == nil
 			copies = params['copies'] ? params['copies'].to_i : 1
 			printRemote.print(microorganism, copies)
+			success("Printing completed")
+		end
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end
+
+# Print genericobject label
+post '/print/g/:id' do
+	defaults()
+	begin
+		genericobject = db.getGeneric(params[:id])
+		if genericobject == nil
+			status 404
+			errmsg("No generic object with given ID")
+		else
+			# Initialize remote if necessary
+			printRemote = db.getPrintRemote($frontendURL) if printRemote == nil
+			copies = params['copies'] ? params['copies'].to_i : 1
+			printRemote.print(genericobject, copies)
 			success("Printing completed")
 		end
 	rescue CloneStoreRuntimeError => e

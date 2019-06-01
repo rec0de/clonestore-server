@@ -1,6 +1,7 @@
 require 'sqlite3'
 require_relative 'plasmid.class'
 require_relative 'microorganism.class'
+require_relative 'genericobject.class'
 require_relative 'printremote.class'
 
 class Database
@@ -12,7 +13,9 @@ class Database
 		"CREATE TABLE IF NOT EXISTS plasmidFeatures(plasmidID INTEGER, hasFeature TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, hasFeature), FOREIGN KEY(plasmidID) REFERENCES plasmids(id));",
 		"CREATE TABLE IF NOT EXISTS plasmidORFs(plasmidID, hasORF TEXT, CONSTRAINT noDuplicates UNIQUE (plasmidID, hasORF), FOREIGN KEY(plasmidID) REFERENCES plasmids(id));",
 
-		"CREATE TABLE IF NOT EXISTS microorganisms(id TEXT PRIMARY KEY, createdBy TEXT, initials TEXT, labNotes TEXT, organism TEXT, resistance TEXT, plasmid TEXT, timeOfEntry INTEGER, timeOfCreation INTEGER, destroyed BOOLEAN, FOREIGN KEY (plasmid) REFERENCES plasmids(id));",
+		"CREATE TABLE IF NOT EXISTS microorganisms(id TEXT PRIMARY KEY, createdBy TEXT, initials TEXT, labNotes TEXT, organism TEXT, resistance TEXT, storageLocation TEXT, plasmid TEXT, timeOfEntry INTEGER, timeOfCreation INTEGER, destroyed BOOLEAN, FOREIGN KEY (plasmid) REFERENCES plasmids(id), CONSTRAINT noDuplicateLocation UNIQUE (storageLocation));",
+
+		"CREATE TABLE IF NOT EXISTS genericobjects(id TEXT PRIMARY KEY, createdBy TEXT, initials TEXT, labNotes TEXT, description TEXT, storageLocation TEXT, timeOfEntry INTEGER, timeOfCreation INTEGER, destroyed BOOLEAN, plasmidRef TEXT, organismRef TEXT, genericRef TEXT, FOREIGN KEY (plasmidRef) REFERENCES plasmids(id), FOREIGN KEY (organismRef) REFERENCES microorganisms(id), FOREIGN KEY (genericRef) REFERENCES genericobjects(id), CONSTRAINT noDuplicateLocation UNIQUE (storageLocation));",
 
 		"CREATE TABLE IF NOT EXISTS storageLocations(location TEXT, plasmidID TEXT, host TEXT, CONSTRAINT locUnique UNIQUE (location), FOREIGN KEY(plasmidID) REFERENCES plasmids(id));",
 
@@ -176,7 +179,7 @@ class Database
 			end
 
 			# Insert main plasmid data
-			stm = @db.prepare("INSERT INTO microorganisms(id, createdBy, initials, labNotes, organism, resistance, plasmid, timeOfEntry, timeOfCreation, destroyed) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 0);")
+			stm = @db.prepare("INSERT INTO microorganisms(id, createdBy, initials, labNotes, organism, resistance, plasmid, storageLocation, timeOfEntry, timeOfCreation, destroyed) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);")
 			stm.bind_param(1, microorganism.id)
 			stm.bind_param(2, microorganism.createdBy)
 			stm.bind_param(3, microorganism.initials)
@@ -184,8 +187,9 @@ class Database
 			stm.bind_param(5, microorganism.organism)
 			stm.bind_param(6, microorganism.resistance)
 			stm.bind_param(7, microorganism.plasmid == '' ? nil : microorganism.plasmid)
-			stm.bind_param(8, microorganism.timeOfEntry)
-			stm.bind_param(9, microorganism.timeOfCreation)
+			stm.bind_param(8, microorganism.storageLocation)
+			stm.bind_param(9, microorganism.timeOfEntry)
+			stm.bind_param(10, microorganism.timeOfCreation)
 
 			begin
 				stm.execute
@@ -214,6 +218,88 @@ class Database
 
 	def archiveMicroorganism(id, flag = 1)
 		stm = @db.prepare("UPDATE microorganisms SET destroyed = ? WHERE id = ?;")
+		stm.bind_param(1, flag)
+		stm.bind_param(2, id)
+		stm.execute
+	end
+
+	# Generic Objects
+
+	def insertGeneric(generic)
+		if generic.is_a? GenericObject
+			# Perform sanity check
+			generic.sanityCheck
+
+			# Calculate ID if not already set
+			if generic.id == nil
+				generic.setIdNum(getNewId())
+			end
+
+			# Insert main plasmid data
+			stm = @db.prepare("INSERT INTO genericobjects(id, createdBy, initials, labNotes, description, storageLocation, timeOfEntry, timeOfCreation, destroyed, plasmidRef, organismRef, genericRef) VALUES(?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?);")
+			stm.bind_param(1, generic.id)
+			stm.bind_param(2, generic.createdBy)
+			stm.bind_param(3, generic.initials)
+			stm.bind_param(4, generic.labNotes)
+			stm.bind_param(5, generic.description)
+			stm.bind_param(6, generic.storageLocation)
+			stm.bind_param(7, generic.timeOfEntry)
+			stm.bind_param(8, generic.timeOfCreation)
+
+			pRef = nil
+			mRef = nil
+			gRef = nil
+
+			if generic.refType == 'plasmid'
+				pRef = generic.refID
+			elsif generic.refType == 'microorganism'
+				mRef = generic.refID
+			else
+				gRef = generic.refID
+			end
+				
+			stm.bind_param(9, pRef)
+			stm.bind_param(10, mRef)
+			stm.bind_param(11, gRef)
+
+			begin
+				stm.execute
+			rescue SQLite3::ConstraintException
+				raise CloneStoreDatabaseError, "Could not save generic object - ID is not unique or referenced object does not exist"
+			end
+
+			# Increment the global ID counter to get a fresh ID next time
+			incrementIdCounter()
+
+			return generic.id
+		else
+			raise CloneStoreDatabaseError, 'Trying to insert a non-genericobject as a generic object'
+		end
+	end
+
+	def getGeneric(id)
+		stm = @db.prepare("SELECT * FROM genericobjects WHERE id = ?;")
+		stm.bind_param(1, id)
+		rs = stm.execute.next # Get only the first returned value
+
+		return nil if rs == nil
+
+		if rs['plasmidRef'] != nil
+			rs['referenceType'] = 'plasmid'
+			rs['referenceID'] = rs['plasmidRef']
+		elsif rs['organismRef'] != nil
+			rs['referenceType'] = 'microorganism'
+			rs['referenceID'] = rs['organismRef']
+		else
+			rs['referenceType'] = 'generic'
+			rs['referenceID'] = rs['genericRef']
+		end
+
+		GenericObject::fromHash(rs)
+	end
+
+	def archiveGeneric(id, flag = 1)
+		stm = @db.prepare("UPDATE genericobjects SET destroyed = ?, storageLocation = NULL WHERE id = ?;")
 		stm.bind_param(1, flag)
 		stm.bind_param(2, id)
 		stm.execute

@@ -46,61 +46,77 @@ class Database
 				plasmid.setIdNum(getNewId())
 			end
 
-			# Insert main plasmid data
-			stm = @db.prepare("INSERT INTO plasmids(id, createdBy, initials, labNotes, description, backbonePlasmid, timeOfEntry, timeOfCreation, geneData, isArchived) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 0);")
-			stm.bind_param(1, plasmid.id)
-			stm.bind_param(2, plasmid.createdBy)
-			stm.bind_param(3, plasmid.initials)
-			stm.bind_param(4, plasmid.labNotes)
-			stm.bind_param(5, plasmid.description)
-			stm.bind_param(6, plasmid.backbonePlasmid)
-			stm.bind_param(7, plasmid.timeOfEntry)
-			stm.bind_param(8, plasmid.timeOfCreation)
-			stm.bind_param(9, plasmid.geneData)
-
 			begin
+				@db.transaction
+
+				# Insert main plasmid data
+				stm = @db.prepare("INSERT INTO plasmids(id, createdBy, initials, labNotes, description, backbonePlasmid, timeOfEntry, timeOfCreation, geneData, isArchived) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 0);")
+				stm.bind_param(1, plasmid.id)
+				stm.bind_param(2, plasmid.createdBy)
+				stm.bind_param(3, plasmid.initials)
+				stm.bind_param(4, plasmid.labNotes)
+				stm.bind_param(5, plasmid.description)
+				stm.bind_param(6, plasmid.backbonePlasmid)
+				stm.bind_param(7, plasmid.timeOfEntry)
+				stm.bind_param(8, plasmid.timeOfCreation)
+				stm.bind_param(9, plasmid.geneData)
+
+			
 				stm.execute
-			rescue SQLite3::ConstraintException
-				raise CloneStoreDatabaseError, "Could not save plasmid - ID is not unique"
+
+				# Insert selection marker data
+				plasmid.selectionMarkers.each { |marker|
+					stm = @db.prepare("INSERT INTO selectionMarkers(plasmidID, marker) VALUES (?, ?);")
+					stm.bind_param(1, plasmid.id)
+					stm.bind_param(2, marker)
+					stm.execute
+				}
+
+				# Insert feature data
+				plasmid.features.each { |feature|
+					stm = @db.prepare("INSERT INTO plasmidFeatures(plasmidID, hasFeature) VALUES (?, ?);")
+					stm.bind_param(1, plasmid.id)
+					stm.bind_param(2, feature)
+					stm.execute
+				}
+
+				# Insert ORF data
+				plasmid.ORFs.each { |orf|
+					stm = @db.prepare("INSERT INTO plasmidORFs(plasmidID, hasORF) VALUES (?, ?);")
+					stm.bind_param(1, plasmid.id)
+					stm.bind_param(2, orf)
+					stm.execute
+				}
+
+				# Increment the global ID counter to get a fresh ID next time
+				incrementIdCounter()
+
+				# Update search index
+				misc = plasmid.selectionMarkers.to_a.concat(plasmid.features.to_a).concat(plasmid.ORFs.to_a).join(' ') + ' ' + plasmid.backbonePlasmid.to_s
+				stm = @db.prepare("INSERT INTO search(id, type, createdBy, initials, labNotes, description, misc) VALUES(?, 'plasmid', ?, ?, ?, ?, ?);")
+				stm.bind_param(1, plasmid.id)
+				stm.bind_param(2, plasmid.createdBy)
+				stm.bind_param(3, plasmid.initials)
+				stm.bind_param(4, plasmid.labNotes)
+				stm.bind_param(5, plasmid.description)
+				stm.bind_param(6, misc)
+				stm.execute
+
+				@db.commit
+
+			rescue SQLite3::ConstraintException => e
+				@db.rollback
+				if e.to_s == "UNIQUE constraint failed: plasmids.id"
+					msg = "ID is not unique"
+				else
+					msg = "Unknown database constraint error: '#{e.to_s}'"
+				end
+					
+				raise CloneStoreDatabaseError, "Could not save plasmid - #{msg}"
+			rescue RuntimeError => e
+				@db.rollback
+				raise CloneStoreDatabaseError, "Unknown exception trying to insert plasmid: '#{e.to_s}'"
 			end
-
-			# Insert selection marker data
-			plasmid.selectionMarkers.each { |marker|
-				stm = @db.prepare("INSERT INTO selectionMarkers(plasmidID, marker) VALUES (?, ?);")
-				stm.bind_param(1, plasmid.id)
-				stm.bind_param(2, marker)
-				stm.execute
-			}
-
-			# Insert feature data
-			plasmid.features.each { |feature|
-				stm = @db.prepare("INSERT INTO plasmidFeatures(plasmidID, hasFeature) VALUES (?, ?);")
-				stm.bind_param(1, plasmid.id)
-				stm.bind_param(2, feature)
-				stm.execute
-			}
-
-			# Insert ORF data
-			plasmid.ORFs.each { |orf|
-				stm = @db.prepare("INSERT INTO plasmidORFs(plasmidID, hasORF) VALUES (?, ?);")
-				stm.bind_param(1, plasmid.id)
-				stm.bind_param(2, orf)
-				stm.execute
-			}
-
-			# Increment the global ID counter to get a fresh ID next time
-			incrementIdCounter()
-
-			# Update search index
-			misc = plasmid.selectionMarkers.to_a.concat(plasmid.features.to_a).concat(plasmid.ORFs.to_a).join(' ') + ' ' + plasmid.backbonePlasmid.to_s
-			stm = @db.prepare("INSERT INTO search(id, type, createdBy, initials, labNotes, description, misc) VALUES(?, 'plasmid', ?, ?, ?, ?, ?);")
-			stm.bind_param(1, plasmid.id)
-			stm.bind_param(2, plasmid.createdBy)
-			stm.bind_param(3, plasmid.initials)
-			stm.bind_param(4, plasmid.labNotes)
-			stm.bind_param(5, plasmid.description)
-			stm.bind_param(6, misc)
-			stm.execute
 
 			return plasmid.id
 		else
@@ -177,39 +193,55 @@ class Database
 				microorganism.setIdNum(getNewId())
 			end
 
-			# Insert main plasmid data
-			stm = @db.prepare("INSERT INTO microorganisms(id, createdBy, initials, labNotes, organism, resistance, plasmid, storageLocation, timeOfEntry, timeOfCreation, destroyed) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);")
-			stm.bind_param(1, microorganism.id)
-			stm.bind_param(2, microorganism.createdBy)
-			stm.bind_param(3, microorganism.initials)
-			stm.bind_param(4, microorganism.labNotes)
-			stm.bind_param(5, microorganism.organism)
-			stm.bind_param(6, microorganism.resistance)
-			stm.bind_param(7, microorganism.plasmid == '' ? nil : microorganism.plasmid)
-			stm.bind_param(8, microorganism.storageLocation)
-			stm.bind_param(9, microorganism.timeOfEntry)
-			stm.bind_param(10, microorganism.timeOfCreation)
-
 			begin
+				@db.transaction
+
+				# Insert main plasmid data
+				stm = @db.prepare("INSERT INTO microorganisms(id, createdBy, initials, labNotes, organism, resistance, plasmid, storageLocation, timeOfEntry, timeOfCreation, destroyed) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);")
+				stm.bind_param(1, microorganism.id)
+				stm.bind_param(2, microorganism.createdBy)
+				stm.bind_param(3, microorganism.initials)
+				stm.bind_param(4, microorganism.labNotes)
+				stm.bind_param(5, microorganism.organism)
+				stm.bind_param(6, microorganism.resistance)
+				stm.bind_param(7, microorganism.plasmid == '' ? nil : microorganism.plasmid)
+				stm.bind_param(8, microorganism.storageLocation)
+				stm.bind_param(9, microorganism.timeOfEntry)
+				stm.bind_param(10, microorganism.timeOfCreation)
 				stm.execute
-			rescue SQLite3::ConstraintException
-				raise CloneStoreDatabaseError, "Could not save microorganism - ID is not unique or referenced plasmid does not exist"
+
+				# Increment the global ID counter to get a fresh ID next time
+				incrementIdCounter()
+
+				# Update search index
+				misc = microorganism.storageLocation + ' ' + microorganism.resistance.to_s
+				description = microorganism.organism.to_s + ' ' + microorganism.plasmid.to_s
+				stm = @db.prepare("INSERT INTO search(id, type, createdBy, initials, labNotes, description, misc) VALUES(?, 'microorganism', ?, ?, ?, ?, ?);")
+				stm.bind_param(1, microorganism.id)
+				stm.bind_param(2, microorganism.createdBy)
+				stm.bind_param(3, microorganism.initials)
+				stm.bind_param(4, microorganism.labNotes)
+				stm.bind_param(5, description)
+				stm.bind_param(6, misc)
+				stm.execute
+
+				@db.commit
+
+			rescue SQLite3::ConstraintException => e
+				@db.rollback
+				if e.to_s == "FOREIGN KEY constraint failed"
+					msg = "Referenced plasmid does not exist"
+				elsif e.to_s == "UNIQUE constraint failed: microorganisms.storageLocation"
+					msg = "Storage location is already occupied"
+				else
+					msg = "Unknown database constraint error: '#{e.to_s}'"
+				end
+					
+				raise CloneStoreDatabaseError, "Could not save microorganism - #{msg}"
+			rescue RuntimeError => e
+				@db.rollback
+				raise CloneStoreDatabaseError, "Unknown exception trying to insert microorganism: '#{e.to_s}'"
 			end
-
-			# Increment the global ID counter to get a fresh ID next time
-			incrementIdCounter()
-
-			# Update search index
-			misc = microorganism.storageLocation + ' ' + microorganism.resistance.to_s
-			description = microorganism.organism.to_s + ' ' + microorganism.plasmid.to_s
-			stm = @db.prepare("INSERT INTO search(id, type, createdBy, initials, labNotes, description, misc) VALUES(?, 'microorganism', ?, ?, ?, ?, ?);")
-			stm.bind_param(1, microorganism.id)
-			stm.bind_param(2, microorganism.createdBy)
-			stm.bind_param(3, microorganism.initials)
-			stm.bind_param(4, microorganism.labNotes)
-			stm.bind_param(5, description)
-			stm.bind_param(6, misc)
-			stm.execute
 
 			return microorganism.id
 		else
@@ -246,52 +278,67 @@ class Database
 				generic.setIdNum(getNewId())
 			end
 
-			# Insert main plasmid data
-			stm = @db.prepare("INSERT INTO genericobjects(id, createdBy, initials, labNotes, description, storageLocation, timeOfEntry, timeOfCreation, destroyed, plasmidRef, organismRef, genericRef) VALUES(?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?);")
-			stm.bind_param(1, generic.id)
-			stm.bind_param(2, generic.createdBy)
-			stm.bind_param(3, generic.initials)
-			stm.bind_param(4, generic.labNotes)
-			stm.bind_param(5, generic.description)
-			stm.bind_param(6, generic.storageLocation)
-			stm.bind_param(7, generic.timeOfEntry)
-			stm.bind_param(8, generic.timeOfCreation)
-
-			pRef = nil
-			mRef = nil
-			gRef = nil
-
-			if generic.refType == 'plasmid'
-				pRef = generic.refID
-			elsif generic.refType == 'microorganism'
-				mRef = generic.refID
-			else
-				gRef = generic.refID
-			end
-				
-			stm.bind_param(9, pRef)
-			stm.bind_param(10, mRef)
-			stm.bind_param(11, gRef)
-
 			begin
+				@db.transaction
+
+				# Insert main plasmid data
+				stm = @db.prepare("INSERT INTO genericobjects(id, createdBy, initials, labNotes, description, storageLocation, timeOfEntry, timeOfCreation, destroyed, plasmidRef, organismRef, genericRef) VALUES(?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?);")
+				stm.bind_param(1, generic.id)
+				stm.bind_param(2, generic.createdBy)
+				stm.bind_param(3, generic.initials)
+				stm.bind_param(4, generic.labNotes)
+				stm.bind_param(5, generic.description)
+				stm.bind_param(6, generic.storageLocation)
+				stm.bind_param(7, generic.timeOfEntry)
+				stm.bind_param(8, generic.timeOfCreation)
+
+				pRef = nil
+				mRef = nil
+				gRef = nil
+
+				if generic.refType == 'plasmid'
+					pRef = generic.refID
+				elsif generic.refType == 'microorganism'
+					mRef = generic.refID
+				else
+					gRef = generic.refID
+				end
+				
+				stm.bind_param(9, pRef)
+				stm.bind_param(10, mRef)
+				stm.bind_param(11, gRef)
 				stm.execute
-			rescue SQLite3::ConstraintException
-				raise CloneStoreDatabaseError, "Could not save generic object - ID is not unique or referenced object does not exist"
+
+				# Increment the global ID counter to get a fresh ID next time
+				incrementIdCounter()
+
+				# Update search index
+				misc = generic.storageLocation + ' ' + generic.refID.to_s
+				stm = @db.prepare("INSERT INTO search(id, type, createdBy, initials, labNotes, description, misc) VALUES(?, 'genericobject', ?, ?, ?, ?, ?);")
+				stm.bind_param(1, generic.id)
+				stm.bind_param(2, generic.createdBy)
+				stm.bind_param(3, generic.initials)
+				stm.bind_param(4, generic.labNotes)
+				stm.bind_param(5, generic.description)
+				stm.bind_param(6, misc)
+				stm.execute
+				@db.commit
+
+			rescue SQLite3::ConstraintException => e
+				@db.rollback
+				if e.to_s == "FOREIGN KEY constraint failed"
+					msg = "Referenced object does not exist"
+				elsif e.to_s == "UNIQUE constraint failed: genericobjects.storageLocation"
+					msg = "Storage location is already occupied"
+				else
+					msg = "Unknown database constraint error: '#{e.to_s}'"
+				end
+					
+				raise CloneStoreDatabaseError, "Could not save generic object - #{msg}"
+			rescue RuntimeError => e
+				@db.rollback
+				raise CloneStoreDatabaseError, "Unknown exception trying to insert generic object: '#{e.to_s}'"
 			end
-
-			# Increment the global ID counter to get a fresh ID next time
-			incrementIdCounter()
-
-			# Update search index
-			misc = generic.storageLocation + ' ' + generic.refID.to_s
-			stm = @db.prepare("INSERT INTO search(id, type, createdBy, initials, labNotes, description, misc) VALUES(?, 'genericobject', ?, ?, ?, ?, ?);")
-			stm.bind_param(1, generic.id)
-			stm.bind_param(2, generic.createdBy)
-			stm.bind_param(3, generic.initials)
-			stm.bind_param(4, generic.labNotes)
-			stm.bind_param(5, generic.description)
-			stm.bind_param(6, misc)
-			stm.execute
 
 			return generic.id
 		else

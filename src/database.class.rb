@@ -266,6 +266,25 @@ class Database
 		stm.execute
 	end
 
+	def updateMicroorganismStorageLocation(id, newLocation)
+		begin
+			stm = @db.prepare("UPDATE microorganisms SET storageLocation = ? WHERE id = ?;")
+			stm.bind_param(1, newLocation)
+			stm.bind_param(2, id)
+			stm.execute
+		rescue SQLite3::ConstraintException => e
+			if e.to_s == "UNIQUE constraint failed: microorganisms.storageLocation"
+				msg = "Storage location is already occupied"
+			else
+				msg = "Unknown database constraint error: '#{e.to_s}'"
+			end
+					
+			raise CloneStoreDatabaseError, "Could not update microorganism location - #{msg}"
+		rescue RuntimeError => e
+			raise CloneStoreDatabaseError, "Unknown exception trying to update microorganism location: '#{e.to_s}'"
+		end
+	end
+
 	# Generic Objects
 
 	def insertGeneric(generic)
@@ -372,6 +391,25 @@ class Database
 		stm.bind_param(1, flag)
 		stm.bind_param(2, id)
 		stm.execute
+	end
+
+	def updateGenericStorageLocation(id, newLocation)
+		begin
+			stm = @db.prepare("UPDATE genericobjects SET storageLocation = ? WHERE id = ?;")
+			stm.bind_param(1, newLocation)
+			stm.bind_param(2, id)
+			stm.execute
+		rescue SQLite3::ConstraintException => e
+			if e.to_s == "UNIQUE constraint failed: genericobjects.storageLocation"
+				msg = "Storage location is already occupied"
+			else
+				msg = "Unknown database constraint error: '#{e.to_s}'"
+			end
+					
+			raise CloneStoreDatabaseError, "Could not update generic object location - #{msg}"
+		rescue RuntimeError => e
+			raise CloneStoreDatabaseError, "Unknown exception trying to update generic object location: '#{e.to_s}'"
+		end
 	end
 
 	# Printing

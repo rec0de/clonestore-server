@@ -186,6 +186,22 @@ Mark a microorganism as archived without actually deleting any information. View
 | type       | text   | Constant string `success`                                 |
 | details    | text   | Human-readable status information                         |
 
+### Changing a microorganism storage location
+
+`PUT /organism/[id]/storageLocation`
+
+Changes the storage location of the specified microorganism to the supplied location.
+
+| Parameter  | Format | Description                                               |
+| ---------- | ------ | --------------------------------------------------------- |
+| id         | text   | Unique ID of the requested microorganism, format `mXY123` |
+| newLocation | text  | Canonical name of the storage location, must be unique    |
+
+| Property   | Format | Description                                               |
+| ---------- | ------ | --------------------------------------------------------- |
+| type       | text   | Constant string `success`                                 |
+| details    | text   | Human-readable status information                         |
+
 ### Viewing a generic object
 
 `GET /generic/[id]`
@@ -230,6 +246,22 @@ Mark a generic object as archived without actually deleting any information. Vie
 | ---------- | ------ | -------------------------------------------------- |
 | type       | text   | Constant string `success`                          |
 | details    | text   | Human-readable status information                  |
+
+### Changing a generic object storage location
+
+`PUT /generic/[id]/storageLocation`
+
+Changes the storage location of the specified generic object to the supplied location.
+
+| Parameter  | Format | Description                                               |
+| ---------- | ------ | --------------------------------------------------------- |
+| id         | text   | Unique ID of the requested generic object, format `gXY123` |
+| newLocation | text  | Canonical name of the storage location, must be unique    |
+
+| Property   | Format | Description                                               |
+| ---------- | ------ | --------------------------------------------------------- |
+| type       | text   | Constant string `success`                                 |
+| details    | text   | Human-readable status information                         |
 
 ### Searching the database
 

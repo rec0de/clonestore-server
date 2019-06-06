@@ -141,6 +141,20 @@ delete '/organism/:id' do
 	end
 end
 
+# Update microorganism location
+put '/organism/:id/storageLocation' do
+	defaults()
+	begin
+		raise CloneStoreRuntimeError, "Microorganism does not exist" if db.getMicroorganism(params[:id]) === nil
+		raise CloneStoreRuntimeError, "New storage location not set" if params['newLocation'] === nil || params['newLocation'] === ''
+		db.updateMicroorganismStorageLocation(params[:id], params['newLocation'])
+		success("Microorganism location changed successfully")
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end
+
 # Get genericobject
 get '/generic/:id' do
 	defaults()
@@ -179,6 +193,20 @@ delete '/generic/:id' do
 		raise CloneStoreRuntimeError, "Generic Object does not exist" if db.getGeneric(params[:id]) === nil
 		db.archiveGeneric(params[:id])
 		success("Generic Object archived successfully")
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end
+
+# Update genericobject location
+put '/generic/:id/storageLocation' do
+	defaults()
+	begin
+		raise CloneStoreRuntimeError, "Generic Object does not exist" if db.getGeneric(params[:id]) === nil
+		raise CloneStoreRuntimeError, "New storage location not set" if params['newLocation'] === nil || params['newLocation'] === ''
+		db.updateGenericStorageLocation(params[:id], params['newLocation'])
+		success("Generic Object location changed successfully")
 	rescue CloneStoreRuntimeError => e
 		status 500
 		errmsg(e.message)

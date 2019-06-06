@@ -30,12 +30,12 @@ class GenericObject attr_reader :id, :createdBy, :initials, :labNotes, :descript
 		end
 		
 		# Assert that time of creation is a somewhat sane unix timestamp and does not lie too far in the future
-		if !@timeOfCreation.is_a? Integer || @timeOfCreation > Time.now.to_i + 24 * 60 * 60 || @timeOfCreation < 0
+		if (!@timeOfCreation.is_a? Integer) || (@timeOfCreation > Time.now.to_i + 24 * 60 * 60) || (@timeOfCreation < 0)
 			raise CloneStoreObjectSanityError, 'Time of creation value is not a valid timestamp'
 		end
 
 		# Assert that time of entry is a somewhat sane unix timestamp and does not lie too far in the future
-		if !@timeOfEntry.is_a? Integer || @timeOfEntry > Time.now.to_i + 24 * 60 * 60 || @timeOfEntry < 0
+		if (!@timeOfEntry.is_a? Integer) || (@timeOfEntry > Time.now.to_i + 24 * 60 * 60) || (@timeOfEntry < 0)
 			raise CloneStoreObjectSanityError, 'Time of entry value is not a valid timestamp'
 		end
 

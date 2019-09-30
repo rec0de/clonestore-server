@@ -1,8 +1,8 @@
 require 'json'
 
-class Microorganism attr_reader :id, :createdBy, :initials, :labNotes, :organism, :plasmid, :resistance, :storageLocation, :timeOfEntry, :timeOfCreation
+class Microorganism attr_reader :id, :createdBy, :initials, :labNotes, :organism, :plasmid, :resistance, :storageLocation, :timeOfEntry, :timeOfCreation, :archived
 
-	def initialize(createdBy, initials, labnotes, organism, plasmid, resistance, storageLocation, timeCreated, timeOfEntry = nil, id = nil)
+	def initialize(createdBy, initials, labnotes, organism, plasmid, resistance, storageLocation, timeCreated, timeOfEntry = nil, id = nil, archived = false)
 		@createdBy = createdBy
 		@initials = initials
 		@labNotes = labnotes
@@ -13,6 +13,7 @@ class Microorganism attr_reader :id, :createdBy, :initials, :labNotes, :organism
 		@timeOfCreation = timeCreated
 		@timeOfEntry = (timeOfEntry == nil) ? Time.now.to_i : timeOfEntry
 		@id = id;
+		@archived = archived;
 	end
 
 	def setIdNum(id)
@@ -37,7 +38,7 @@ class Microorganism attr_reader :id, :createdBy, :initials, :labNotes, :organism
 	end
 
 	def self.fromHash(h)
-		Microorganism.new(h['createdBy'], h['initials'], h['labNotes'], h['organism'], h['plasmid'], h['resistance'], h['storageLocation'], h['timeOfCreation'], h['timeOfEntry'], h['id'])
+		Microorganism.new(h['createdBy'], h['initials'], h['labNotes'], h['organism'], h['plasmid'], h['resistance'], h['storageLocation'], h['timeOfCreation'], h['timeOfEntry'], h['id'], h['archived'])
 	end
 
 	def self.fromJSON(json)
@@ -74,7 +75,8 @@ class Microorganism attr_reader :id, :createdBy, :initials, :labNotes, :organism
 			'resistance' => @resistance,
 			'storageLocation' => @storageLocation,
 			'timeOfCreation' => @timeOfCreation,
-			'timeOfEntry' => @timeOfEntry
+			'timeOfEntry' => @timeOfEntry,
+			'archived' => @archived
 		}
 
 		return JSON.generate(obj)

@@ -1,8 +1,8 @@
 require 'json'
 
-class GenericObject attr_reader :id, :createdBy, :initials, :labNotes, :description, :refType, :refID, :storageLocation, :timeOfEntry, :timeOfCreation
+class GenericObject attr_reader :id, :createdBy, :initials, :labNotes, :description, :refType, :refID, :storageLocation, :timeOfEntry, :timeOfCreation, :archived
 
-	def initialize(createdBy, initials, labnotes, description, referenceType, referenceID, storageLocation, timeCreated, timeOfEntry = nil, id = nil)
+	def initialize(createdBy, initials, labnotes, description, referenceType, referenceID, storageLocation, timeCreated, timeOfEntry = nil, id = nil, archived = false)
 		@createdBy = createdBy
 		@initials = initials
 		@labNotes = labnotes
@@ -13,6 +13,7 @@ class GenericObject attr_reader :id, :createdBy, :initials, :labNotes, :descript
 		@timeOfCreation = timeCreated
 		@timeOfEntry = (timeOfEntry == nil) ? Time.now.to_i : timeOfEntry
 		@id = id;
+		@archived = archived;
 	end
 
 	def setIdNum(id)
@@ -46,7 +47,7 @@ class GenericObject attr_reader :id, :createdBy, :initials, :labNotes, :descript
 	end
 
 	def self.fromHash(h)
-		GenericObject.new(h['createdBy'], h['initials'], h['labNotes'], h['description'], h['referenceType'], h['referenceID'], h['storageLocation'], h['timeOfCreation'], h['timeOfEntry'], h['id'])
+		GenericObject.new(h['createdBy'], h['initials'], h['labNotes'], h['description'], h['referenceType'], h['referenceID'], h['storageLocation'], h['timeOfCreation'], h['timeOfEntry'], h['id'], h['archived'])
 	end
 
 	def self.fromJSON(json)
@@ -87,7 +88,8 @@ class GenericObject attr_reader :id, :createdBy, :initials, :labNotes, :descript
 			'referenceID' => @refID,
 			'storageLocation' => @storageLocation,
 			'timeOfCreation' => @timeOfCreation,
-			'timeOfEntry' => @timeOfEntry
+			'timeOfEntry' => @timeOfEntry,
+			'archived' => @archived
 		}
 
 		return JSON.generate(obj)

@@ -1,9 +1,9 @@
 require 'set'
 require 'json'
 
-class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :backbonePlasmid, :timeOfEntry, :timeOfCreation, :geneData, :features, :selectionMarkers, :ORFs
+class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :backbonePlasmid, :timeOfEntry, :timeOfCreation, :geneData, :features, :selectionMarkers, :ORFs, :archived
 
-	def initialize(createdBy, initials, desc, labnotes, backbone, geneData, timeCreated, timeOfEntry = nil, id = nil)
+	def initialize(createdBy, initials, desc, labnotes, backbone, geneData, timeCreated, timeOfEntry = nil, id = nil, archived = false)
 		@features = Set.new
 		@selectionMarkers = Set.new
 		@ORFs = Set.new
@@ -16,6 +16,7 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 		@timeOfEntry = (timeOfEntry == nil) ? Time.now.to_i : timeOfEntry
 		@geneData = geneData
 		@id = id;
+		@archived = archived;
 	end
 
 	def addFeature(feature)
@@ -52,7 +53,7 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 	end
 
 	def self.fromHash(h)
-		Plasmid.new(h['createdBy'], h['initials'], h['description'], h['labNotes'], h['backbonePlasmid'], h['geneData'], h['timeOfCreation'], h['timeOfEntry'], h['id'])
+		Plasmid.new(h['createdBy'], h['initials'], h['description'], h['labNotes'], h['backbonePlasmid'], h['geneData'], h['timeOfCreation'], h['timeOfEntry'], h['id'], h['archived'])
 	end
 
 	def self.fromJSON(json)
@@ -88,7 +89,8 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 			'timeOfEntry' => @timeOfEntry,
 			'createdBy' => @createdBy,
 			'initials' => @initials,
-			'geneData' => @geneData
+			'geneData' => @geneData,
+			'archived' => @archived
 		}
 
 		return JSON.generate(obj)

@@ -2,7 +2,7 @@
 require 'json'
 require 'sinatra'
 require_relative 'src/database.class'
-require_relative 'src/plasmid.class'
+require_relative 'src/auth.class'
 require_relative 'src/printremote.class'
 
 version = '0.1.0'
@@ -11,6 +11,7 @@ $frontendURL = "http://cs.rec0de.net/?[typeid]-[objectid]"
 $databaseFile = "test.sqlite"
 
 db = Database.new($databaseFile)
+Authenticator::linkDatabase(db)
 printRemote = nil
 
 # Listen globally
@@ -39,6 +40,11 @@ end
 # Storage location message (plasmidID and bacterial host)
 def storageContentMsg(id, host)
 	"{\"type\":\"storageLocationContent\", \"id\":\"#{id}\", \"host\": \"#{host}\"}"
+end
+
+# Return error message for unauthenticated users
+def checkauth
+
 end
 
 # Handle CORS preflight requests
@@ -397,6 +403,26 @@ get '/search/:mode' do
 		}
 
 		return {'type' => 'searchResultList', 'results' => res}.to_json
+	rescue CloneStoreRuntimeError => e
+		status 500
+		errmsg(e.message)
+	end
+end
+
+# Authentication endpoint
+
+post '/auth' do
+	defaults()
+	begin
+		raise CloneStoreRuntimeError, "No authentication token given" if !params['token'] or params['token'] == '' 
+		session = Authenticator.authenticate(params['token'])
+
+		if session != nil
+			{'type' => 'sessionToken', 'sessionToken' => session}.to_json
+		else
+			status 403
+			errmsg("Authentication failed - invalid token")
+		end
 	rescue CloneStoreRuntimeError => e
 		status 500
 		errmsg(e.message)

@@ -22,7 +22,8 @@ class Database
 		"CREATE VIRTUAL TABLE  IF NOT EXISTS search USING FTS5(id, type, createdBy, initials, labNotes, description, misc);",
 
 		"CREATE TABLE IF NOT EXISTS idCounter(key TEXT, value INTEGER);",
-		"CREATE TABLE IF NOT EXISTS printers(url TEXT, name TEXT, location TEXT, secret TEXT);"
+		"CREATE TABLE IF NOT EXISTS printers(url TEXT, name TEXT, location TEXT, secret TEXT);",
+		"CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY, startTime INTEGER)"
 	]
 
 	def initialize(file)
@@ -125,7 +126,7 @@ class Database
 	end
 
 	def getPlasmid(id)
-		stm = @db.prepare("SELECT * FROM plasmids WHERE id = ?;")
+		stm = @db.prepare("SELECT *, (isArchived = 1) AS archived FROM plasmids WHERE id = ?;")
 		stm.bind_param(1, id)
 		rs = stm.execute.next # Get only the first returned value
 
@@ -250,7 +251,7 @@ class Database
 	end
 
 	def getMicroorganism(id)
-		stm = @db.prepare("SELECT * FROM microorganisms WHERE id = ?;")
+		stm = @db.prepare("SELECT *, (destroyed = 1) AS archived FROM microorganisms WHERE id = ?;")
 		stm.bind_param(1, id)
 		rs = stm.execute.next # Get only the first returned value
 
@@ -366,7 +367,7 @@ class Database
 	end
 
 	def getGeneric(id)
-		stm = @db.prepare("SELECT * FROM genericobjects WHERE id = ?;")
+		stm = @db.prepare("SELECT *, (destroyed = 1) AS archived FROM genericobjects WHERE id = ?;")
 		stm.bind_param(1, id)
 		rs = stm.execute.next # Get only the first returned value
 
@@ -504,6 +505,27 @@ class Database
 
 	def incrementIdCounter
 		stm = @db.prepare("UPDATE idCounter SET value = value + 1 WHERE key = 'global';")
+		stm.execute
+	end
+
+	# Session management
+
+	def registerSessionToken(token)
+		stm = @db.prepare("INSERT INTO sessions(token, startTime) VALUES (?, ?);")
+		stm.bind_param(1, token)
+		stm.bind_param(2, Time.now.to_i)
+		stm.execute
+	end
+
+	def getSessionByToken(token)
+		stm = @db.prepare("SELECT startTime FROM sessions WHERE token = ?;")
+		stm.bind_param(1, token)
+		stm.execute
+	end
+
+	def revokeSessionToken(token)
+		stm = @db.prepare("DELETE FROM sessions WHERE token = ?;")
+		stm.bind_param(1, token)
 		stm.execute
 	end
 

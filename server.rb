@@ -42,9 +42,9 @@ def storageContentMsg(id, host)
 	"{\"type\":\"storageLocationContent\", \"id\":\"#{id}\", \"host\": \"#{host}\"}"
 end
 
-# Return error message for unauthenticated users
-def checkauth
-
+# Missing session token error message
+def missingAuth
+	"{\"type\":\"authError\", \"details\":\"This action requires a valid session token\"}"
 end
 
 # Handle CORS preflight requests
@@ -62,6 +62,7 @@ end
 # Get plasmid
 get '/plasmid/:id' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		plasmid = db.getPlasmid(params[:id])
 		if plasmid == nil
@@ -79,6 +80,7 @@ end
 # Add plasmid
 post '/plasmid' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		plasmid = Plasmid::fromJSON(params['data'])
 		id = db.insertPlasmid(plasmid)
@@ -93,6 +95,7 @@ end
 # Archive plasmid
 delete '/plasmid/:id' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		raise CloneStoreRuntimeError, "Plasmid does not exist" if db.getPlasmid(params[:id]) === nil
 		db.archivePlasmid(params[:id])
@@ -106,6 +109,7 @@ end
 # Get microorganism
 get '/organism/:id' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		microorganism = db.getMicroorganism(params[:id])
 		if microorganism == nil
@@ -123,6 +127,7 @@ end
 # Add microorganism
 post '/organism' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		microorganism = Microorganism::fromJSON(params['data'])
 		id = db.insertMicroorganism(microorganism)
@@ -137,6 +142,7 @@ end
 # Archive microorganism
 delete '/organism/:id' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		raise CloneStoreRuntimeError, "Microorganism does not exist" if db.getMicroorganism(params[:id]) === nil
 		db.archiveMicroorganism(params[:id])
@@ -150,6 +156,7 @@ end
 # Update microorganism location
 put '/organism/:id/storageLocation' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		raise CloneStoreRuntimeError, "Microorganism does not exist" if db.getMicroorganism(params[:id]) === nil
 		raise CloneStoreRuntimeError, "New storage location not set" if params['newLocation'] === nil || params['newLocation'] === ''
@@ -164,6 +171,7 @@ end
 # Get genericobject
 get '/generic/:id' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		genericobject = db.getGeneric(params[:id])
 		if genericobject == nil
@@ -181,6 +189,7 @@ end
 # Add genericobject
 post '/generic' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		genericobject = GenericObject::fromJSON(params['data'])
 		id = db.insertGeneric(genericobject)
@@ -195,6 +204,7 @@ end
 # Archive genericobject
 delete '/generic/:id' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		raise CloneStoreRuntimeError, "Generic Object does not exist" if db.getGeneric(params[:id]) === nil
 		db.archiveGeneric(params[:id])
@@ -208,6 +218,7 @@ end
 # Update genericobject location
 put '/generic/:id/storageLocation' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		raise CloneStoreRuntimeError, "Generic Object does not exist" if db.getGeneric(params[:id]) === nil
 		raise CloneStoreRuntimeError, "New storage location not set" if params['newLocation'] === nil || params['newLocation'] === ''
@@ -222,6 +233,7 @@ end
 # Printer status
 get '/print' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		# Initialize remote if necessary
 		printRemote = db.getPrintRemote($frontendURL) if printRemote == nil
@@ -235,6 +247,7 @@ end
 # Printer setup
 put '/print' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		if params['url'] == nil || params['authKey'] == nil || params['authKey'] == '' || params['url'] == ''
 			raise CloneStoreRuntimeError, "Printer URL or secret missing"
@@ -252,6 +265,7 @@ end
 # Print plasmid label
 post '/print/p/:id' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		plasmid = db.getPlasmid(params[:id])
 		if plasmid == nil
@@ -273,6 +287,7 @@ end
 # Print microorganism label
 post '/print/m/:id' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		microorganism = db.getMicroorganism(params[:id])
 		if microorganism == nil
@@ -294,6 +309,7 @@ end
 # Print genericobject label
 post '/print/g/:id' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		genericobject = db.getGeneric(params[:id])
 		if genericobject == nil
@@ -315,6 +331,7 @@ end
 # Set storage slot
 put '/storage/:loc' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		raise CloneStoreRuntimeError, "Storage slot is already occupied" unless db.getStorageSlot(params[:loc]) === nil
 		raise CloneStoreRuntimeError, "No entry set" if params['entry'] == '' or params['entry'] == nil
@@ -332,6 +349,7 @@ end
 # Free storage slot
 delete '/storage/:loc' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		if db.freeStorageSlot(params[:loc])
 			success("Storage slot cleared")
@@ -347,6 +365,7 @@ end
 # Get plasmid storage locations
 get '/storage/id/:id' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		res = []
 		db.getStorageLocations(params[:id]).each{ |row|
@@ -362,6 +381,7 @@ end
 # Get plasmid in given location
 get '/storage/loc/:loc' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		res = db.getStorageSlot(params[:loc])
 		
@@ -380,6 +400,7 @@ end
 # Search endpoint
 get '/search/:mode' do
 	defaults()
+	return missingAuth unless Authenticator::check(params['sessionToken'])
 	begin
 		raise CloneStoreRuntimeError, "No search query given" if !params['query'] or params['query'] == '' 
 		query = params['query']

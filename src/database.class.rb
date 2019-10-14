@@ -520,7 +520,7 @@ class Database
 	def getSessionByToken(token)
 		stm = @db.prepare("SELECT startTime FROM sessions WHERE token = ?;")
 		stm.bind_param(1, token)
-		stm.execute
+		stm.execute.next
 	end
 
 	def revokeSessionToken(token)

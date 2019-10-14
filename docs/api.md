@@ -8,11 +8,15 @@ The current API version can be queried by a GET request to the API root.
 
 ## Authentication
 
-At this time, not authentication mechanisms are in place.
+Authentication is managed by the `Authenticator` class found in `auth.class.rb`. As the means of authentication vary widely by your desired usecase, this class only provides demo functionality.
+
+In general, authenticating a user works by calling the `auth` endpoint with some sort of authentication token which is then verified by the Authenticator class. If the token is valid (in the demo implementation a token is valid if and only if it is the string `testtoken`), the API call will return a `sessionToken` that is valid for a certain timeframe and can be used to authenticate subsequent requests by sending it alongside the request as a parameter.
+
+Calling an API endpoint that requires authentication without a valid `sessionToken` will result in a response of type `authError`.
 
 ## Methods
 
-The API consists of four endpoints, `plasmid`, `storage`, `search` and `print`, as well as the root endpoint.
+The API consists of five endpoints, `plasmid`, `storage`, `search`, `print` and `auth`, as well as the root endpoint.
 
 ### Server info
 
@@ -24,6 +28,21 @@ Returns a JSON Object including the server version.
 | ---------- | ------ | ------------------------------------------ |
 | type       | text   | Constant string `clonestore-server`        |
 | version    | text   | Current version of the server              |
+
+### Authentication
+
+`POST /auth`
+
+Issues a new session token to authenticate subsequent API calls, provided that the given authentication token is valid. Returns an error, otherwise.
+
+| Parameter  | Format | Description                                        |
+| ---------- | ------ | -------------------------------------------------- |
+| token      | text   | Authentication token                               |
+
+| Property   | Format | Description                                |
+| ---------- | ------ | ------------------------------------------ |
+| type       | text   | Constant string `sessionToken`             |
+| sessionToken | text | New session token to be used for authentication |
 
 ### Viewing a plasmid
 

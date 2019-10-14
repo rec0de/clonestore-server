@@ -24,7 +24,7 @@ class Authenticator
 
 		return false if startTime == nil
 
-		if startTime < Date.now.to_i - @@tokenLifetime
+		if startTime[0] < Time.now.to_i - @@tokenLifetime
 			@@db.revokeSessionToken(token)
 			return false
 		else

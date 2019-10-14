@@ -15,8 +15,8 @@ class Plasmid attr_reader :id, :createdBy, :initials, :description, :labNotes, :
 		@timeOfCreation = timeCreated
 		@timeOfEntry = (timeOfEntry == nil) ? Time.now.to_i : timeOfEntry
 		@geneData = geneData
-		@id = id;
-		@archived = archived;
+		@id = id
+		@archived = (archived && archived != 0) ? true : false # looks stupid but forces conversion of 1/0 flags to true boolean
 	end
 
 	def addFeature(feature)
